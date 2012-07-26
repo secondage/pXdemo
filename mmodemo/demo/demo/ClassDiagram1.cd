@@ -1,0 +1,146 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="demo.Background" Collapsed="true">
+    <Position X="0.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAIAAAAAAAAAAAAAABAAAAAAAAA=</HashCode>
+      <FileName>Background.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.Character" Collapsed="true">
+    <Position X="2.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>oAQggBQAQAACAMsgoAQC9KQFQAAEAQAUgABABAAAAFA=</HashCode>
+      <FileName>Character.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.CharacterAnimation" Collapsed="true">
+    <Position X="16.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AASAAAAIgCAEDAAABCMAAgQDAAAEEQgAAAACAAAAAAA=</HashCode>
+      <FileName>CharacterAnimation.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.CharacterPic" Collapsed="true">
+    <Position X="5.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAEAAAACAAC4AAACCCAAAQAgBRAAAAARBAAwJEACA=</HashCode>
+      <FileName>CharacterPic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.CharacterTitle" Collapsed="true">
+    <Position X="12" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAYIADiAAMAwAAAAIAAAAAAAAIAAgACAABAASEACCAA=</HashCode>
+      <FileName>CharacterTitle.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.Cloud" Collapsed="true">
+    <Position X="3" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAA=</HashCode>
+      <FileName>Cloud.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.GameConst" Collapsed="true">
+    <Position X="18.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACACAAAkBAAAAAAQAAAAAICgBCCAgAIgAAQACAAAA=</HashCode>
+      <FileName>GameConst.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.Log" Collapsed="true">
+    <Position X="20.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Log.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.MainGame" Collapsed="true">
+    <Position X="16.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AARAEEAQIAAAAwAAAAAaAAAgAAAAAEgBAAAAAACAAIQ=</HashCode>
+      <FileName>MainGame.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.MiniMap" Collapsed="true">
+    <Position X="14.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAABAACAkgRACIAIAAAIAAAABAAAAAQAAAAAACAA=</HashCode>
+      <FileName>MiniMap.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="demo.Monster" Collapsed="true">
+    <Position X="0.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Monster.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.Npc" Collapsed="true">
+    <Position X="2.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAACAAAAAAAAAAAAAABAAEAAAAAAQAAAAEAAAAAAA=</HashCode>
+      <FileName>Npc.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.Player" Collapsed="true">
+    <Position X="5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAACAAAgQAAAAAAQAABAAEAAgAAAAgAAAAAAAAAAA=</HashCode>
+      <FileName>Player.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.PreRenderEffect" Collapsed="true">
+    <Position X="7.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAIABAQAQhAAAACQIQAAgAEAAAAgBACAAAAAAA=</HashCode>
+      <FileName>PreRenderEffect.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.Program" Collapsed="true">
+    <Position X="18.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAA=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.Quest">
+    <Position X="20.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EgAAAAAAASAAgAAAEAAAAAQAAAAUAAIAAEACAAJAAyA=</HashCode>
+      <FileName>Quest.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.RenderChunk" Collapsed="true">
+    <Position X="7.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQBBAAABAAAgAUgwIACIMABCAgAAwCEABIAhEAAAAA=</HashCode>
+      <FileName>RenderChunk.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="demo.Scene" Collapsed="true">
+    <Position X="16.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>kAQEAAJBDAAXBAxADCADQEYCSAAHAAGFAjcFBxAEhEA=</HashCode>
+      <FileName>Scene.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.UIElement" Collapsed="true">
+    <Position X="9.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAACAAAACAAAAAAAAAAAAAAAAAAAAABIAAADAAAA=</HashCode>
+      <FileName>UIMgr.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="demo.UIMgr" Collapsed="true">
+    <Position X="18.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAIIgAIACCgEAAAAACAAFGAHCAQAAABCAAAAAAEA=</HashCode>
+      <FileName>UIMgr.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="微软雅黑" Size="9" />
+</ClassDiagram>

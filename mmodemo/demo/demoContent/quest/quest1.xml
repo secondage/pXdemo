@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<XnaContent>
+  <!-- TODO: replace this Asset with your own XML asset data. -->
+  <Asset Type="QuestDefinition.QuestDef">
+    <id>1</id>
+    <name>任务一</name>
+    <talk>近日，魔军的爪牙渗入昆仑山巅的晴空之中，为师需要研习法术，无法出战，徒儿你就代替为师消灭五名魔军，再回来见我。</talk>
+    <talk_done>甚好！为师研习出回春术之妙法，赠与徒儿。请徒儿再消灭五名新近出现的妖军吧。</talk_done>
+    <talk_notdone>徒儿，魔军何日清剿干净？</talk_notdone>
+    <btn_ok_content>好的！</btn_ok_content>
+    <btn_cancel_content>我再想想</btn_cancel_content>
+    <next>quest2</next>
+    <actionfunc>Quest_quest1</actionfunc>
+  </Asset>
+</XnaContent>

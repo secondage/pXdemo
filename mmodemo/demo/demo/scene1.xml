@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<SceneDef>
+  <Config>
+    <FixedEnemyNum>1</FixedEnemyNum>
+    <PlayerSpeed>300</PlayerSpeed>
+  </Config>
+  <NpcDef>
+    <Npc>
+      <Name>npc1</Name>
+      <Hp>100</Hp>
+      <ScreenX>1500</ScreenX>
+      <ScreenY>1500</ScreenY>
+      <Layer>15</Layer>
+      <Picture>char1</Picture>
+      <Speed>0</Speed>
+      <Quest>
+        <quest1/>
+        <quest2/>
+        <quest3/>
+      </Quest>
+    </Npc>
+    <Npc>
+      <Name>npc2</Name>
+      <Hp>100</Hp>
+      <ScreenX>3000</ScreenX>
+      <ScreenY>4000</ScreenY>
+      <Layer>15</Layer>
+      <Picture>char1</Picture>
+      <Speed>0</Speed>
+    </Npc>
+    <Npc>
+      <Name>boss</Name>
+      <Hp>100</Hp>
+      <ScreenX>1600</ScreenX>
+      <ScreenY>1600</ScreenY>
+      <Layer>15</Layer>
+      <Picture>char2</Picture>
+      <Speed>0</Speed>
+      <Visible>False</Visible>
+    </Npc>
+  </NpcDef>
+</SceneDef>

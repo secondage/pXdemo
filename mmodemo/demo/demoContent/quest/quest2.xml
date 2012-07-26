@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<XnaContent>
+  <!-- TODO: replace this Asset with your own XML asset data. -->
+  <Asset Type="QuestDefinition.QuestDef">
+    <id>2</id>
+    <name>任务二</name>
+    <talk>甚好！为师研习出回春术之妙法，赠与徒儿。请徒儿再消灭五名新近出现的妖军吧。</talk>
+    <talk_done>看来你已经有能力进行最后的挑战了。魔军和妖军均有邪神所控，现在它已经侵入至昆仑山颠，位于XXX,YYY处，为师相信你一定能够将其击溃.</talk_done>
+    <talk_notdone>徒儿，妖军何日清剿干净？</talk_notdone>
+    <btn_ok_content>明白，徒儿这就出发！</btn_ok_content>
+    <btn_cancel_content>我再想想</btn_cancel_content>
+    <next>quest3</next>
+    <actionfunc>Quest_quest2</actionfunc>
+  </Asset>
+</XnaContent>

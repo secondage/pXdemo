@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<XnaContent>
+  <Asset Type="UIControlTemplate.UIControlTemplate">
+    <type>UIDialog</type>
+    <texture>controls</texture>
+    <rects>
+      <Item>
+        <name>Normal</name>
+        <x>0</x>
+        <y>17</y>
+        <w>2</w>
+        <h>2</h>
+      </Item>
+    </rects>
+    <childs></childs>
+  </Asset>
+</XnaContent>

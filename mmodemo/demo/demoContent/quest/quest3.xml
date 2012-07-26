@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<XnaContent>
+  <!-- TODO: replace this Asset with your own XML asset data. -->
+  <Asset Type="QuestDefinition.QuestDef">
+    <id>3</id>
+    <name>任务三</name>
+    <talk>看来你已经有能力进行最后的挑战了。魔军和妖军均有邪神所控，现在它已经侵入至昆仑山颠，位于XXX,YYY处，为师相信你一定能够将其击溃.</talk>
+    <talk_done>邪神的身影从昆仑之巅消失，尽情呼吸这自由欢畅的空气吧。</talk_done>
+    <talk_notdone>去吧，邪神在XXX,YYY处等你</talk_notdone>
+    <btn_ok_content>我这就去！</btn_ok_content>
+    <btn_cancel_content>我再想想</btn_cancel_content>
+    <next></next>
+    <actionfunc>Quest_quest3</actionfunc>
+  </Asset>
+</XnaContent>

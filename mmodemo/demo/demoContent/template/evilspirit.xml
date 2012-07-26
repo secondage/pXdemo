@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<XnaContent>
+  <Asset Type="EntityDefinition.EntityDefinition">
+    <name>妖军</name>
+    <type>Monster</type>
+    <tmpid>2</tmpid>
+    <pic>char2</pic>
+    <hp>120</hp>
+    <maxhp>120</maxhp>
+    <atk>30</atk>
+    <def>30</def>
+    <speed>1340</speed>
+    <size>1.0</size>
+  </Asset>
+</XnaContent>
