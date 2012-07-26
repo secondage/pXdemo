@@ -85,11 +85,18 @@
       </Item>
       <Item>
         <name>Attack</name>
-        <framecount>1</framecount>
-        <eventframe>0</eventframe>
+        <framecount>2</framecount>
+        <eventframe>1</eventframe>
         <speed>1.0</speed>
         <loop>false</loop>
         <frames>
+          <Item>
+            <x>300</x>
+            <y>1500</y>
+            <w>150</w>
+            <h>150</h>
+            <center>center</center>
+          </Item>
           <Item>
             <x>300</x>
             <y>1500</y>
