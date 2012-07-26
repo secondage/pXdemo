@@ -204,7 +204,6 @@ namespace demo
             */
             // TODO: use this.Content to load your game content here
         }
-        UIDialog dialog;
         /// <summary>
         /// UnloadContent will be called once per game and is the place to unload
         /// all content.
@@ -421,12 +420,6 @@ namespace demo
 
         }
 
-        protected void testbtn_OnClick(object sender, EventArgs e)
-        {
-            int x = 0;
-            x++;
-            dialog.State = RenderChunk.RenderChunkState.FadeOutToDel;
-        }
         protected void clickeffect_OnAnimationFini(object sender, EventArgs e)
         {
             PreRenderEffect effect = sender as PreRenderEffect;

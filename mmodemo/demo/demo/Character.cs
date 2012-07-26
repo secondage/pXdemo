@@ -160,6 +160,14 @@ namespace demo
             }
         }
 
+        public virtual bool NeedTitle
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         public string Name
         {
             get
@@ -731,7 +739,7 @@ namespace demo
             currentactionset = null;
         }
 
-        static public Character CreateCharacter(string path, Scene scene)
+        static public Character CreateCharacter(string path, Scene scene, string name = "")
         {
             EntityDefinition.EntityDefinition ed = GameConst.Content.Load<EntityDefinition.EntityDefinition>(@"template/" + path);
 
@@ -749,17 +757,23 @@ namespace demo
                         c.maxhp = ed.maxhp;
                         c.atk = ed.atk;
                         c.def = ed.def;
-                        c.name = ed.name;
+                        if (name != "")
+                            c.name = name;
+                        else
+                            c.name = ed.name;
                         c.speed = ed.speed;
                         CharacterDefinition.PicDef pd = GameConst.Content.Load<CharacterDefinition.PicDef>(@"chardef/" + ed.pic);
                         CharacterPic cpic = new CharacterPic(pd, 0);
                         cpic.State = RenderChunk.RenderChunkState.FadeIn;
                         c.Picture = cpic;
-                        CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
-                        title.NameString = ed.name;
-                        title.Character = c;
+                        if (c.NeedTitle)
+                        {
+                            CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
+                            title.NameString = ed.name;
+                            title.Character = c;
+                            c.Title = title;
+                        }
                         c.pic.Size = new Vector2(ed.size, ed.size);
-                        c.Title = title;
                         c.State = CharacterState.Idle;
                         return c;
                     }

@@ -121,6 +121,7 @@
     <Compile Include="quest\Quest_quest3.cs" />
     <Compile Include="RenderChunk.cs" />
     <Compile Include="Scene.cs" />
+    <Compile Include="Spell.cs" />
     <Compile Include="uicontrols\UITextButton.cs" />
     <Compile Include="uicontrols\UIDialog.cs" />
     <Compile Include="uicontrols\UIElement.cs" />

@@ -38,7 +38,6 @@ namespace demo
         private Vector4 viewport;
         private Vector4 actualSize;
         private PreRenderEffect countdowneffect;
-        private Vector2 currentarget = new Vector2();
 
         private SceneState state = SceneState.Map;
 
@@ -47,6 +46,7 @@ namespace demo
         private List<RenderChunk> renderchunks = new List<RenderChunk>();
         private List<Character> characters = new List<Character>();
         private List<Character> battlecharacters = new List<Character>();
+        private List<Spell> spells = new List<Spell>();
         private string name;
         public MiniMap minimap = null;
         private bool battlefini = false;
@@ -241,6 +241,10 @@ namespace demo
                 {
                     ch.Update(gametime);
                 }
+                foreach (Spell s in spells)
+                {
+                    s.Update(gametime);
+                }
                 UpdatePlayerTurn(gametime);
                 UpdateBattleResult();
             }
@@ -310,6 +314,11 @@ namespace demo
         public void AddMonster(Character ch)
         {
             battlecharacters.Add(ch);
+        }
+
+        public void AddSpell(Spell ch)
+        {
+            spells.Add(ch);
         }
 
         public void SetViewportPos(float x, float y)
@@ -423,6 +432,11 @@ namespace demo
                     ch.Title.State = RenderChunk.RenderChunkState.Delete;
                 }
                 battlecharacters.Clear();
+                foreach (Spell ch in spells)
+                {
+                    ch.Picture.State = RenderChunk.RenderChunkState.Delete;
+                }
+                spells.Clear();
                 UIElement trackd = UIMgr.GetUIControlByName("dlg_questtrck");
                 if (trackd != null)
                 {
@@ -499,6 +513,14 @@ namespace demo
         {
             try
             {
+                countdowneffect = new PreRenderEffect("number", 64, 64);
+                countdowneffect.Initialize(GameConst.Content);
+                countdowneffect.Loop = false;
+                countdowneffect.Scene = this;
+                countdowneffect.CoordinateSystem = RenderChunk.CoordinateSystemType.Screen;
+                countdowneffect.PlaySpeed = 1.0f;
+
+
                 System.IO.Stream stream = TitleContainer.OpenStream(name + ".xml");
                 XmlDocument doc = new XmlDocument();
                 doc.Load(stream);
@@ -629,12 +651,7 @@ namespace demo
                 stream.Close();
                 stream.Dispose();
 
-                countdowneffect = new PreRenderEffect("number", 64, 64);
-                countdowneffect.Initialize(GameConst.Content);
-                countdowneffect.Loop = false;
-                countdowneffect.Scene = this;
-                countdowneffect.CoordinateSystem = RenderChunk.CoordinateSystemType.Screen;
-                countdowneffect.PlaySpeed = 1.0f;
+               
 
                 //create task track 
                 UIDialog dialog = UIMgr.AddUIControl("UIDialog", "dlg_questtrck", 755, 174, 247, 345, -1, 99, this) as UIDialog;
@@ -679,8 +696,6 @@ namespace demo
         /// 战斗回合
         /// </summary>
 
-        Vector2 posb = new Vector2();
-        Vector2 mposb = new Vector2();
         double _roundtimedur = 30.0;
         double _roundtime = -1.0;
         int roundturn = -1;
@@ -695,7 +710,7 @@ namespace demo
             else
                 roundturn++;
 
-            if (roundturn % 2 == 0)
+            if (roundturn % 2 == 1)
             {
                 //my turn
                 //UIMgr.AddPlayerTurnDialog((int)UIMgr.UILayout.Center, (int)UIMgr.UILayout.Center, 0.5, 99, new EventHandler(OnPlayerTurnDlgClose));
@@ -735,7 +750,7 @@ namespace demo
         {
             if (_roundtime > 0.0)
             {
-                if (player.Operate == Character.OperateType.Attack && player.OperateTarget != null)
+                if (player.Operate != Character.OperateType.None && player.OperateTarget != null)
                 {
                     _roundtime = -1.0;
                     BattleRound(0);
@@ -762,16 +777,39 @@ namespace demo
                 //posb = player.Position;
                 //player.State = CharacterState.Launch;
                 //player.OnActionCompleted += new EventHandler(Player_OnActionCompleted);
-
-                player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
                 if (player.Operate == Character.OperateType.Attack)
+                {
+                    player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
                     player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, player.OperateTarget);
-                player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                player.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Position);
-                player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                    player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                    player.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                    player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                    player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Position);
+                    player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                    player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                }
+                else if (player.Operate == Character.OperateType.Magic)
+                {
+                    Spell fireball = Character.CreateCharacter("fireball", this) as Spell;
+                    if (fireball != null)
+                    {
+                        fireball.Layer = 15;
+                        fireball.FaceDirMethod = Character.DirMethod.Fixed;
+                        fireball.FixedDir = new Vector2(1, 0);
+                        fireball.Picture.Direction = fireball.FixedDir;
+
+                        fireball.Position = player.Position + new Vector2(100, 0);
+                        fireball.OnActionCompleted += new EventHandler(Spell_OnActionCompleted);
+                        AddSpell(fireball);
+
+                        fireball.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        fireball.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, player.OperateTarget);
+                        fireball.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        fireball.AddActionSet("Idle", CharacterState.Dead, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                    }
+
+                  
+                }
 
             }
             else if (turn == 1)
@@ -794,6 +832,18 @@ namespace demo
                     monster.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
                 }
                 //monster.OnActionCompleted += new EventHandler(Monster_OnActionCompleted);
+            }
+        }
+
+
+        protected void Spell_OnActionCompleted(object sender, EventArgs e)
+        {
+            Spell spell = sender as Spell;
+            if (spell.State == CharacterState.Dead)
+            {
+                spell.Picture.State = RenderChunk.RenderChunkState.FadeOutToDel;
+                spells.Remove(spell);
+                return;
             }
         }
 
