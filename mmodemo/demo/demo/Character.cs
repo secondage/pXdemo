@@ -23,6 +23,7 @@ namespace demo
         Attack,
         Attack2,
         Attack3,
+        BeAttack,
         Return,
         Dead,
         Dying,  //垂死
@@ -619,9 +620,11 @@ namespace demo
             {
                 float dhp = offense.ATK * 1.5f - def * 1.3f;
                 hp -= (int)dhp;
+                ClearActionSet();
+                AddActionSet("BeAttack", CharacterState.BeAttack, CharacterActionSetChangeFactor.AnimationCompleted, null);
                 if (hp <= 0)
                 {
-                    ClearActionSet();
+                    //ClearActionSet();
                     //AddActionSet("Dying", CharacterState.Dying, CharacterActionSetChangeFactor.AnimationCompleted, null);
                     AddActionSet("Dead", CharacterState.Dead, CharacterActionSetChangeFactor.AnimationCompleted, null);
                     offense.Notify(GameAction.Kill, this.templateid, 1);
@@ -762,8 +765,16 @@ namespace demo
                         else
                             c.name = ed.name;
                         c.speed = ed.speed;
-                        CharacterDefinition.PicDef pd = GameConst.Content.Load<CharacterDefinition.PicDef>(@"chardef/" + ed.pic);
+                        CharacterDefinition.PicDef pd = GameConst.Content.Load<CharacterDefinition.PicDef>(@"chardef/" + ed.pics[0]);
                         CharacterPic cpic = new CharacterPic(pd, 0);
+                        if (ed.pics.Count > 0)
+                        {
+                            for (int i = 1; i < ed.pics.Count; ++i)
+                            {
+                                CharacterDefinition.PicDef pd1 = GameConst.Content.Load<CharacterDefinition.PicDef>(@"chardef/" + ed.pics[i]);
+                                cpic.AddCharacterDefinition(pd1);
+                            }
+                        }
                         cpic.State = RenderChunk.RenderChunkState.FadeIn;
                         c.Picture = cpic;
                         if (c.NeedTitle)

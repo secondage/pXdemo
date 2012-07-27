@@ -16,7 +16,7 @@ namespace EntityDefinition
         public string name;
         public string type;
         public int tmpid;
-        public string pic;
+        public List<string> pics;
         public int hp;
         public int maxhp;
         public int atk;

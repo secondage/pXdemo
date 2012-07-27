@@ -5,7 +5,9 @@
     <name>火球</name>
     <type>Spell</type>
     <tmpid>1</tmpid>
-    <pic>spell1</pic>
+    <pics>
+      <Item>spell1</Item>
+    </pics>
     <hp>70</hp>
     <maxhp>70</maxhp>
     <atk>20</atk>

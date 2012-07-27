@@ -4,7 +4,9 @@
     <name>妖军</name>
     <type>Monster</type>
     <tmpid>2</tmpid>
-    <pic>char2</pic>
+    <pics>
+      <Item>char2</Item>
+    </pics>
     <hp>120</hp>
     <maxhp>120</maxhp>
     <atk>30</atk>

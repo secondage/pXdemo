@@ -19,7 +19,7 @@ namespace demo
         public Player(string n, Scene s) :
             base(n, s)
         {
-            atk = 234;
+            atk = 1234;
             def = 22;
         }
 

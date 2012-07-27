@@ -5,7 +5,9 @@
     <name>魔军</name>
     <type>Monster</type>
     <tmpid>1</tmpid>
-    <pic>char2</pic>
+    <pics>
+      <Item>char2</Item>
+    </pics>
     <hp>70</hp>
     <maxhp>70</maxhp>
     <atk>20</atk>

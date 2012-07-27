@@ -497,7 +497,7 @@ namespace demo
                         monster.FixedDir = new Vector2(-1, 0);
                         monster.Picture.Direction = monster.FixedDir;
 
-                        monster.Position = new Vector2(GameConst.ScreenWidth - monster.Picture.FrameSize.X, (i + 1) * GameConst.ScreenHeight / (numenemy + 1)) + new Vector2(viewport.X, viewport.Y);
+                        monster.Position = new Vector2(GameConst.ScreenWidth - monster.Picture.FrameSize.X * 0.5f, (i + 1) * GameConst.ScreenHeight / (numenemy + 1)) + new Vector2(viewport.X, viewport.Y);
                         monster.OnActionCompleted += new EventHandler(Monster_OnActionCompleted);
                         //monster.Picture.Size = new Vector2(3, 3);
                         AddMonster(monster);
@@ -843,14 +843,21 @@ namespace demo
             {
                 spell.Picture.State = RenderChunk.RenderChunkState.FadeOutToDel;
                 spells.Remove(spell);
+                NextRound();
                 return;
             }
+           
         }
 
 
         protected void Monster_OnActionCompleted(object sender, EventArgs e)
         {
             Monster monster = sender as Monster;
+            if (monster.State == CharacterState.BeAttack)
+            {
+                monster.State = CharacterState.Idle;
+                return;
+            }
             if (monster.State == CharacterState.Dead)
             {
                 monster.Picture.State = RenderChunk.RenderChunkState.FadeOutToDel;
@@ -900,7 +907,14 @@ namespace demo
             }
             else
             {
-                NextRound();
+                if (player.State != CharacterState.BeAttack)
+                {
+                    NextRound();
+                }
+                else
+                {
+                    player.State = CharacterState.Idle;
+                }
             }
             /*if (player.State == CharacterState.Idle)
             {
@@ -1119,9 +1133,9 @@ namespace demo
         }
 
 
-        public void ConfirOperateTarget()
+        public void ConfirmOperateTarget()
         {
-            if (_hostCharacter != null)
+            if (_hostCharacter != null && _roundtime > 0)
             {
                 //player.AttackTarget = _hostCharacter;
                 /*player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
@@ -1132,9 +1146,14 @@ namespace demo
                 player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Position);
                 player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
                 player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);*/
+
+                //若直接选中monster，为直接攻击
+                if (player.Operate == Character.OperateType.None)
+                    player.Operate = Character.OperateType.Attack;
                 player.OperateTarget = _hostCharacter;
                 _hostCharacter.Picture.HighLight = false;
                 _hostCharacter = null;
+                player.CloseBattleMenu();
             }
         }
 
@@ -1146,8 +1165,7 @@ namespace demo
             Character host = null;
             if (state == SceneState.Battle)
             {
-                //在战斗模式下，只有选择了行动以后才能选择行动对象
-                if (player.Operate == Character.OperateType.None)
+                /*if (player.Operate != Character.OperateType.None)
                 {
                     if (_hostCharacter != null)
                     {
@@ -1155,7 +1173,7 @@ namespace demo
                         _hostCharacter = null;
                     }
                     return;
-                }
+                }*/
             }
             foreach (Character ch in characters)
             {
@@ -1200,7 +1218,7 @@ namespace demo
                 }
                 else if (host is Monster)
                 {
-                    if (player.Operate == Character.OperateType.Attack)
+                    if (player.Operate == Character.OperateType.Attack || player.Operate == Character.OperateType.None)
                     {
                         GameCursor.SetCursor(GameCursor.CursorType.Attack);
                     }

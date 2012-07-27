@@ -277,6 +277,22 @@
         </frames>
       </Item>
       <Item>
+        <name>BeAttack</name>
+        <framecount>1</framecount>
+        <eventframe>-1</eventframe>
+        <speed>1.0</speed>
+        <loop>true</loop>
+        <frames>
+          <Item>
+            <x>0</x>
+            <y>0</y>
+            <w>300</w>
+            <h>150</h>
+            <center>center</center>
+          </Item>
+        </frames>
+      </Item>
+      <Item>
         <name>Attack2</name>
         <framecount>10</framecount>
         <eventframe>6</eventframe>

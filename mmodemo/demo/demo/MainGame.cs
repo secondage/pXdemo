@@ -137,7 +137,7 @@ namespace demo
             CharacterDefinition.PicDef pd = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
             //CharacterPic cpic = new CharacterPic(texchar1, 15, new Vector2(150, 150));
             CharacterPic cpic = new CharacterPic(pd, 15);
-            //CharacterDefinition.PicDef pd1 = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3_1");
+            //CharacterDefinition.PicDef pd1 = Content.Load<CharacterDefinition.PicDef>(@"chardef/boss1_2");
             //cpic.AddCharacterDefinition(pd1);
             player.Picture = cpic;
             CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
@@ -404,7 +404,7 @@ namespace demo
                         }
                         else if (CurrentScene.State == Scene.SceneState.Battle)
                         {
-                            CurrentScene.ConfirOperateTarget();
+                            CurrentScene.ConfirmOperateTarget();
                         }
 
 

@@ -37,28 +37,37 @@ namespace demo
             Talk,
             Lastword,
         };
-        private static string[] cursors = new string[(int)CursorType.Lastword];
-        private static string curcursor = "";
+        private static string[] cursorfns = new string[(int)CursorType.Lastword];
+        private static Cursor[] cursors = new Cursor[(int)CursorType.Lastword];
+        private static Cursor curcursor = null;
         private static IntPtr chandle;
         static public void Initialize(IntPtr handle)
         {
-            cursors[(int)CursorType.Attack] = "cursors/attack.cur";
-            cursors[(int)CursorType.Normal] = "cursors/normal.cur";
-            cursors[(int)CursorType.Magic] = "cursors/magic.cur";
-            cursors[(int)CursorType.Talk] = "cursors/talk.cur";
-            cursors[(int)CursorType.NA] = "cursors/na.cur";
+            cursorfns[(int)CursorType.Attack] = "cursors/attack.cur";
+            cursorfns[(int)CursorType.Normal] = "cursors/normal.cur";
+            cursorfns[(int)CursorType.Magic] = "cursors/magic.cur";
+            cursorfns[(int)CursorType.Talk] = "cursors/talk.cur";
+            cursorfns[(int)CursorType.NA] = "cursors/na.cur";
             chandle = handle;
+            for (int i = 0; i < (int)CursorType.Lastword; ++i)
+            {
+                Cursor myCursor = new Cursor(chandle);
+                IntPtr colorCursorHandle = LoadCursorFromFile(cursorfns[i]);
+                myCursor.GetType().InvokeMember("handle", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.SetField, null, myCursor,
+                       new object[] { colorCursorHandle });
+                cursors[i] = myCursor;
+            }
         }
         static public void SetCursor(CursorType type)
         {
             Control ctrl = System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle);
             if (ctrl != null && curcursor != cursors[(int)type])
             {
-                Cursor myCursor = new Cursor(chandle);
-                IntPtr colorCursorHandle = LoadCursorFromFile(cursors[(int)type]);
-                myCursor.GetType().InvokeMember("handle", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.SetField, null, myCursor,
-                       new object[] { colorCursorHandle });
-                ctrl.Cursor = myCursor;
+                //Cursor myCursor = new Cursor(chandle);
+                //IntPtr colorCursorHandle = LoadCursorFromFile(cursors[(int)type]);
+                //myCursor.GetType().InvokeMember("handle", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.SetField, null, myCursor,
+                  //     new object[] { colorCursorHandle });
+                ctrl.Cursor = cursors[(int)type];
                 curcursor = cursors[(int)type];
             }
         }

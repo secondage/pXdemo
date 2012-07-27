@@ -5,12 +5,15 @@
     <name>邪神</name>
     <type>Monster</type>
     <tmpid>3</tmpid>
-    <pic>char2</pic>
+    <pics>
+      <Item>boss1_1</Item>
+      <Item>boss1_2</Item>
+    </pics>
     <hp>1000</hp>
     <maxhp>1000</maxhp>
     <atk>70</atk>
     <def>40</def>
-    <speed>1240</speed>
-    <size>2.3</size>
+    <speed>240</speed>
+    <size>1.0</size>
   </Asset>
 </XnaContent>
