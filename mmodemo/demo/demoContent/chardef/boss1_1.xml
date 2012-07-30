@@ -271,7 +271,7 @@
         </frames>
       </Item>
       <Item>
-        <name>Lading</name>
+        <name>Landing</name>
         <framecount>4</framecount>
         <eventframe>-1</eventframe>
         <speed>1.0</speed>

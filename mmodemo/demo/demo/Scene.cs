@@ -44,6 +44,7 @@ namespace demo
         private Random random = new Random();
 
         private List<RenderChunk> renderchunks = new List<RenderChunk>();
+        private List<RenderChunk> renderchunksdefer = new List<RenderChunk>();
         private List<Character> characters = new List<Character>();
         private List<Character> battlecharacters = new List<Character>();
         private List<Spell> spells = new List<Spell>();
@@ -247,8 +248,15 @@ namespace demo
                 }
                 UpdatePlayerTurn(gametime);
                 UpdateBattleResult();
+                UpdateNextActionRound(gametime);
             }
 
+            foreach (RenderChunk rc in renderchunksdefer)
+            {
+                AddRenderChunk(rc);
+            }
+            renderchunksdefer.Clear();
+            
 
             _removelist.Clear();
             foreach (RenderChunk rc in renderchunks)
@@ -289,6 +297,24 @@ namespace demo
 
             //SortRenderChunksByLayer();
         }
+
+        private void UpdateNextActionRound(GameTime gametime)
+        {
+            if (_nextactiontime > 0.0)
+            {
+                _nextactiontime -= gametime.ElapsedGameTime.TotalSeconds;
+                if (_nextactiontime <= 0.0)
+                {
+                    NextActionRound();
+                }
+            }
+        }
+
+        public void AddRenderChunkDefer(RenderChunk rc)
+        {
+            renderchunksdefer.Add(rc);
+        }
+        
 
         public void AddRenderChunk(RenderChunk rc)
         {
@@ -345,6 +371,7 @@ namespace demo
             if (battlecharacters.Count == 0)
             {
                 battlefini = true;
+                actionlist.Clear();
                 //UIMgr.AddWinDialog((int)UIMgr.UILayout.Center, (int)UIMgr.UILayout.Center, 3.0, 99, new EventHandler(OnWinDialogClose));
                 UIElement d = UIMgr.AddUIControl("Dialog_Win", "win_dlg", (int)UILayout.Center, (int)UILayout.Center, 0, 0, 3.0, 99, this);
                 if (d != null)
@@ -479,7 +506,7 @@ namespace demo
                     es = 2;
                 if (player.CompletedQuests.Contains(2)) // quest 2 completed
                     es = 3;
-                //es = 3;
+               //es = 3;
                 for (int i = 0; i < numenemy; ++i)
                 {
                     string mtmp = "";
@@ -542,6 +569,17 @@ namespace demo
                                 case "PlayerSpeed":
                                     {
                                         GameConst.PlayerSpeed = Convert.ToInt32(node.FirstChild.Value);
+                                        break;
+                                    }
+                                case "PlayerHP":
+                                    {
+                                        player.HP = Convert.ToInt32(node.FirstChild.Value);
+                                        player.MaxHP = Convert.ToInt32(node.FirstChild.Value);
+                                        break;
+                                    }
+                                case "PlayerATK":
+                                    {
+                                        player.ATK = Convert.ToInt32(node.FirstChild.Value);
                                         break;
                                     }
                             }
@@ -710,7 +748,7 @@ namespace demo
             else
                 roundturn++;
 
-            if (roundturn % 2 == 1)
+            /*if (roundturn % 2 == 1)
             {
                 //my turn
                 //UIMgr.AddPlayerTurnDialog((int)UIMgr.UILayout.Center, (int)UIMgr.UILayout.Center, 0.5, 99, new EventHandler(OnPlayerTurnDlgClose));
@@ -738,7 +776,12 @@ namespace demo
                 }
                 turn = Turn.Enemy;
             }
-
+            */
+            UIElement d = UIMgr.AddUIControl("Dialog_PlayerTurn", "playerturn_dlg", (int)UILayout.Center, (int)UILayout.Center, 0, 0, 0.5, 99, this);
+            d.OnClose += new EventHandler(OnPlayerTurnDlgClose);
+            turn = Turn.Player;
+            player.OperateTarget = null;
+            player.Operate = Character.OperateType.None;
         }
 
         /// <summary>
@@ -770,58 +813,59 @@ namespace demo
             }
         }
 
-        public void BattleRound(int turn)
+
+        
+
+        List<ActionOrder> actionlist = new List<ActionOrder>();
+        double _nextactiontime = -1.0;
+        double _nextactiontimedur = 0.5;
+        private void NextActionRound()
         {
-            if (turn == 0)
+            if (actionlist.Count > 0)
             {
-                //posb = player.Position;
-                //player.State = CharacterState.Launch;
-                //player.OnActionCompleted += new EventHandler(Player_OnActionCompleted);
-                if (player.Operate == Character.OperateType.Attack)
+                if (actionlist.Count == 1)
                 {
-                    player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                    player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, player.OperateTarget);
-                    player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                    player.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                    player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                    player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Position);
-                    player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                    player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                    actionlist.Clear();
+                    NextRound();
+                    return;
                 }
-                else if (player.Operate == Character.OperateType.Magic)
+                if (actionlist[0].character is Player)
                 {
-                    Spell fireball = Character.CreateCharacter("fireball", this) as Spell;
-                    if (fireball != null)
+                    if (player.Operate == Character.OperateType.Attack)
                     {
-                        fireball.Layer = 15;
-                        fireball.FaceDirMethod = Character.DirMethod.Fixed;
-                        fireball.FixedDir = new Vector2(1, 0);
-                        fireball.Picture.Direction = fireball.FixedDir;
-
-                        fireball.Position = player.Position + new Vector2(100, 0);
-                        fireball.OnActionCompleted += new EventHandler(Spell_OnActionCompleted);
-                        AddSpell(fireball);
-
-                        fireball.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                        fireball.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, player.OperateTarget);
-                        fireball.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                        fireball.AddActionSet("Idle", CharacterState.Dead, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, player.OperateTarget);
+                        player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        player.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Position);
+                        player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
                     }
+                    else if (player.Operate == Character.OperateType.Magic)
+                    {
+                        Spell fireball = Character.CreateCharacter("fireball", this) as Spell;
+                        if (fireball != null)
+                        {
+                            fireball.Layer = 15;
+                            fireball.FaceDirMethod = Character.DirMethod.Fixed;
+                            fireball.FixedDir = new Vector2(1, 0);
+                            fireball.Picture.Direction = fireball.FixedDir;
 
-                  
+                            fireball.Position = player.Position + new Vector2(100, 0);
+                            fireball.OnActionCompleted += new EventHandler(Spell_OnActionCompleted);
+                            AddSpell(fireball);
+
+                            fireball.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                            fireball.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, player.OperateTarget);
+                            fireball.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                            fireball.AddActionSet("Idle", CharacterState.Dead, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        }
+                    }
                 }
-
-            }
-            else if (turn == 1)
-            {
-                //pick monster
-                if (battlecharacters.Count > 0)
+                else
                 {
-                    int idx = random.Next(battlecharacters.Count);
-                    Monster monster = battlecharacters[idx] as Monster;
-                    //mposb = monster.Position;
-                    //monster.AttackTarget = player;
-                    //monster.State = CharacterState.Launch;
+                    Monster monster = actionlist[0].character as Monster;
                     monster.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
                     monster.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, player);
                     monster.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
@@ -831,8 +875,56 @@ namespace demo
                     monster.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
                     monster.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
                 }
+
+                actionlist[0].character.Order = null;
+                actionlist.RemoveAt(0);
+
+                
+            }
+        }
+
+       
+        public void BattleRound(int turn)
+        {
+            //generate actionlist
+            actionlist.Clear();
+            actionlist.Add(new ActionOrder(null, 100));
+            player.Order = new ActionOrder(player, random.Next(10, 20));
+            actionlist.Add(player.Order);
+            foreach(Monster m in battlecharacters)
+            {
+                m.Order = new ActionOrder(m, random.Next(10, 20));
+                actionlist.Add(m.Order);
+            }
+
+            actionlist.Sort();
+
+            GoNextActionRound();
+            if (turn == 0)
+            {
+                //posb = player.Position;
+                //player.State = CharacterState.Launch;
+                //player.OnActionCompleted += new EventHandler(Player_OnActionCompleted);
+                
+
+            }
+            else if (turn == 1)
+            {
+                //pick monster
+                if (battlecharacters.Count > 0)
+                {
+                    //mposb = monster.Position;
+                    //monster.AttackTarget = player;
+                    //monster.State = CharacterState.Launch;
+                   
+                }
                 //monster.OnActionCompleted += new EventHandler(Monster_OnActionCompleted);
             }
+        }
+
+        private void GoNextActionRound()
+        {
+            _nextactiontime = _nextactiontimedur;
         }
 
 
@@ -843,7 +935,8 @@ namespace demo
             {
                 spell.Picture.State = RenderChunk.RenderChunkState.FadeOutToDel;
                 spells.Remove(spell);
-                NextRound();
+                //NextRound();
+                GoNextActionRound();
                 return;
             }
            
@@ -853,20 +946,21 @@ namespace demo
         protected void Monster_OnActionCompleted(object sender, EventArgs e)
         {
             Monster monster = sender as Monster;
-            if (monster.State == CharacterState.BeAttack)
+            /*if (monster.State == CharacterState.BeAttack)
             {
                 monster.State = CharacterState.Idle;
                 return;
-            }
+            }*/
             if (monster.State == CharacterState.Dead)
             {
                 monster.Picture.State = RenderChunk.RenderChunkState.FadeOutToDel;
                 monster.Title.State = RenderChunk.RenderChunkState.FadeOutToDel;
                 battlecharacters.Remove(monster);
+                actionlist.Remove(monster.Order);
                 return;
             }
 
-            NextRound();
+            GoNextActionRound();
             /*if (monster.State == CharacterState.Idle)
             {
                 if (monster.AttackTarget != null)
@@ -907,14 +1001,21 @@ namespace demo
             }
             else
             {
-                if (player.State != CharacterState.BeAttack)
+                if (player.State == CharacterState.Dead)
                 {
-                    NextRound();
+                    ReturnMap();
+                    return;
+                }
+                GoNextActionRound();
+                /*if (player.State != CharacterState.BeAttack)
+                {
+                    //NextRound();
+                    NextActionRound();
                 }
                 else
                 {
                     player.State = CharacterState.Idle;
-                }
+                }*/
             }
             /*if (player.State == CharacterState.Idle)
             {

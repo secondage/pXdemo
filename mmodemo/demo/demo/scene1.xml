@@ -1,8 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <SceneDef>
   <Config>
-    <FixedEnemyNum>1</FixedEnemyNum>
+    <FixedEnemyNum>2</FixedEnemyNum>
     <PlayerSpeed>300</PlayerSpeed>
+    <PlayerHP>300</PlayerHP>
+    <PlayerATK>60</PlayerATK>
   </Config>
   <NpcDef>
     <Npc>

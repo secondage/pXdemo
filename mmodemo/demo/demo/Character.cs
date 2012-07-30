@@ -75,6 +75,26 @@ namespace demo
         public Character interactive;
         public string effectname;
     };
+
+    public class ActionOrder : IComparable
+    {
+        public Character character;
+        int speed;
+
+        public ActionOrder(Character c, int s)
+        {
+            character = c;
+            speed = s;
+        }
+
+        public int CompareTo(object obj)
+        {
+            ActionOrder c = obj as ActionOrder;
+            return speed - c.speed;
+        }
+    }
+
+
     public class Character
     {
         public enum DirMethod
@@ -169,6 +189,8 @@ namespace demo
             }
         }
 
+        public ActionOrder Order { get; set; }
+
         public string Name
         {
             get
@@ -252,7 +274,7 @@ namespace demo
                 pic = value;
                 if (scene != null)
                 {
-                    scene.AddRenderChunk(pic);
+                    scene.AddRenderChunkDefer(pic);
                 }
             }
         }
@@ -629,6 +651,8 @@ namespace demo
                     AddActionSet("Dead", CharacterState.Dead, CharacterActionSetChangeFactor.AnimationCompleted, null);
                     offense.Notify(GameAction.Kill, this.templateid, 1);
                 }
+                else
+                    AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
             }
             catch (NullReferenceException)
             {
