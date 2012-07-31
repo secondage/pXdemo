@@ -14,6 +14,10 @@ using System.Windows.Forms;
 using demo.uicontrols;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Beetle;
+using NetSyncObject;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace demo
 {
@@ -22,9 +26,8 @@ namespace demo
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class MainGame : Microsoft.Xna.Framework.Game
+    public partial class MainGame : Microsoft.Xna.Framework.Game
     {
-       
 
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -32,8 +35,16 @@ namespace demo
         private Player player;
         private PreRenderEffect spawnEffect;
         private SpriteFont mainfont;
+        private static TcpChannel clientchannel;
+        private LoginDialog dlgLogin;
+        private long ClientID;
+        private bool ContentLoadCompleted = false;
+
+        private System.Threading.Tasks.Task contentLoadingTask = null;
 
         Texture2D[] cloudTextureArray = new Texture2D[15];
+
+        List<NetSyncObject.PlayerNet> players = new List<NetSyncObject.PlayerNet>();
 
         public MainGame()
         {
@@ -45,6 +56,8 @@ namespace demo
             graphics.PreferredBackBufferHeight = GameConst.ScreenHeight;
             graphics.DeviceCreated += new EventHandler<EventArgs>(Graphics_DeviceCreated);
             Content.RootDirectory = "Content";
+
+            Beetle.TcpUtils.Setup(100, 1, 1);
 #if WINDOWS
             this.IsMouseVisible = true;
             this.IsFixedTimeStep = false;
@@ -75,9 +88,27 @@ namespace demo
 
             CurrentScene = new Scene("scene1", 0, 0, GameConst.ScreenWidth, GameConst.ScreenHeight);
             CurrentScene.ActualSize = new Vector4(0, 0, 2048 * GameConst.BackgroundScale, 2048 * GameConst.BackgroundScale);
-            player = new Player("player1", CurrentScene);
+
+            //init net client
+            try
+            {
+                clientchannel = TcpServer.CreateClient("127.0.0.1", 9610);
+                clientchannel.SetPackage<ProjectXServer.Messages.HeadSizePackage>().ReceiveMessage = ReceiveMessage;
+                clientchannel.ChannelDisposed += new EventChannelDisposed(channel_ChannelDisposed);
+                clientchannel.BeginReceive();
+            }
+            catch (Exception e_)
+            {
+                MessageBox.Show(e_.Message);
+            }
+
+            //this.Window.ClientBounds
+
+
             base.Initialize();
         }
+
+
 
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
@@ -90,14 +121,7 @@ namespace demo
 
             GraphicsDevice.ScissorRectangle = new Rectangle(0, 0, 1024, 768);
 
-            mainfont = Content.Load<SpriteFont>(@"font/YaHeiCh16");
-            GameConst.CurrentFont = mainfont;
 
-            UIMgr.ControlsTexture = Content.Load<Texture2D>(@"ui/controls");
-
-            CharacterTitle.TakeQuestTexture = Content.Load<Texture2D>(@"questicon/take");
-            CharacterTitle.QuestCompletedTexture = Content.Load<Texture2D>(@"questicon/done");
-            CharacterTitle.QuestNonCompletedTexture = Content.Load<Texture2D>(@"questicon/notdone");
 
             // add backgroud
             /*Texture2D texbg0 = Content.Load<Texture2D>(@"background/yun_a0");
@@ -117,93 +141,158 @@ namespace demo
             bg = new Background(texbg3, 3);
             bg.Size = new Vector2(GameConst.BackgroundScale, GameConst.BackgroundScale);
             CurrentScene.AddRenderChunk(bg);*/
-            CurrentScene.LoadBackground();
+            //var tokenSource = new CancellationTokenSource();
+            //var token = tokenSource.Token;
+            var source = new CancellationTokenSource();
+            var token = source.Token;
+            contentLoadingTask = new System.Threading.Tasks.Task(new Action(() =>
+                {
+                    try
+                    {
+                        //token.ThrowIfCancellationRequested();
+                        mainfont = Content.Load<SpriteFont>(@"font/YaHeiCh16");
+                        GameConst.CurrentFont = mainfont;
 
-            // load cloud texture
-            for (int i = 0; i < 15; ++i)
-            {
-                cloudTextureArray[i] = Content.Load<Texture2D>(@"cloud/yun_b" + string.Format("{0:d2}", i));
-            }
+                        UIMgr.ControlsTexture = Content.Load<Texture2D>(@"ui/controls");
 
-            CurrentScene.GenerateClouds(cloudTextureArray);
+                        CharacterTitle.TakeQuestTexture = Content.Load<Texture2D>(@"questicon/take");
+                        CharacterTitle.QuestCompletedTexture = Content.Load<Texture2D>(@"questicon/done");
+                        CharacterTitle.QuestNonCompletedTexture = Content.Load<Texture2D>(@"questicon/notdone");
 
-            spawnEffect = new PreRenderEffect("spawn", 256, 256);
-            spawnEffect.Initialize(Content);
-            spawnEffect.Loop = false;
-            spawnEffect.Scene = CurrentScene;
-            spawnEffect.PlaySpeed = 2.0f;
-
-            //init character
-            CharacterDefinition.PicDef pd = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
-            //CharacterPic cpic = new CharacterPic(texchar1, 15, new Vector2(150, 150));
-            CharacterPic cpic = new CharacterPic(pd, 15);
-            //CharacterDefinition.PicDef pd1 = Content.Load<CharacterDefinition.PicDef>(@"chardef/boss1_2");
-            //cpic.AddCharacterDefinition(pd1);
-            player.Picture = cpic;
-            CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
-            title.Layer = 15;
-            title.NameString = "player1";
-            title.Character = player;
-            player.Title = title;
-            player.Position = new Vector2(1024 / 2, 768 / 2);
-            player.Speed = 350.0f;
-
-
-            player.AddActionSet("Idle", CharacterState.Spawn, CharacterActionSetChangeFactor.EffectCompleted, "Spawn");
-            player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
-            player.AddPreRenderEffect("Spawn", spawnEffect);
-            CurrentScene.AddCharacter(player);
-            CurrentScene.Player = player;
-
-
-            CurrentScene.LoadGameData();
-            CurrentScene.SortRenderChunksByLayer();
-            player.Speed = GameConst.PlayerSpeed;
-
-            Texture2D texminimap = Content.Load<Texture2D>(@"minimap/scene1");
-            Texture2D texminimapchar = Content.Load<Texture2D>(@"minimap/charactericon");
-            Texture2D texmapmask = Content.Load<Texture2D>(@"minimap/mapmask");
-            CurrentScene.InitMiniMap(texminimap, texminimapchar, texmapmask, 0, GameConst.ScreenHeight - 256, 256, 256);
-
-            CharacterTitle.BlockTexture = Content.Load<Texture2D>(@"effect/block");
-
-            //UIMgr.AddLeaderDialog((int)UIMgr.UILayout.Right, (int)UIMgr.UILayout.Top, -1, 99, null);
-
-            UIMgr.AddUIControl("Dialog_Leader", "leader_dlg", (int)UILayout.Right, (int)UILayout.Top, 0, 0, -1, 99, this);
-
-            UITextBlock text = UIMgr.CreateUIControl("UITextBlock") as UITextBlock;
-            if (text != null)
-            {
-                text.SourceRect = new Rectangle(0, 0, 100, 100);
-                text.Text = @"ÄãÄãÄãÄãÄãÄãÄãÄãÄã44444444444ÄãÄãÄãÄãÄãÄã ÄãÄãÄãÄã333ÄãÄãÄãÄãÄãÄãÄãÄãÄãÄã3111ÄãÄãÄãÄãÄãÄãÄãÄãÄãÄãÄãÄãÄã";
-                text.SourceRect = new Rectangle(0, 0, 200, 100);
-                //text.Size = new Vector2(1, 1);
-                //UIMgr.AddUIControl(text, "testtext", 200, 200, 0, 0, -1, 99, this);
-            }
-
-            
-            //GameCursor.SetCursor(GameCursor.CursorType.Normal);
-
-            /*
-                        dialog = UIMgr.AddUIControl("Dialog_Npc", "dialognpc", (int)UILayout.Center, (int)UILayout.Bottom, 0, 0, -1, 99, this) as UIDialog;
-                        if (dialog != null)
+                        CurrentScene.LoadBackground();
+                        // load cloud texture
+                        for (int i = 0; i < 15; ++i)
                         {
-                            UITextButton btn = UIMgr.CreateUIControl("UITextButton") as UITextButton;
-                            if (btn != null)
-                            {
-                                btn.Text = "ÄãÄãÄãÄãÄãÄãÄãÄãÄã444444";
-                                dialog.AddUIControl(btn, "testbtn", 20, 200, 300, 20, -1, this);
-                            }
-                            UIImage npcface1 = UIMgr.CreateUIControl("UIImage") as UIImage;
-                            if (npcface1 != null)
-                            {
-                                npcface1.Texture = Content.Load<Texture2D>(@"npcface/NPC01");
-                                dialog.AddUIControl(npcface1, "testimage", 0, -npcface1.Texture.Height, 0, 0, -1, this);
-                            }
+                            cloudTextureArray[i] = Content.Load<Texture2D>(@"cloud/yun_b" + string.Format("{0:d2}", i));
                         }
-            */
-            // TODO: use this.Content to load your game content here
+
+
+                        spawnEffect = new PreRenderEffect("spawn", 256, 256);
+                        spawnEffect.Initialize(Content);
+                        spawnEffect.Loop = false;
+                        spawnEffect.Scene = CurrentScene;
+                        spawnEffect.PlaySpeed = 2.0f;
+
+                        //init character
+                        Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
+                        CurrentScene.LoadGameData();
+
+
+
+                        Texture2D texminimap = Content.Load<Texture2D>(@"minimap/scene1");
+                        Texture2D texminimapchar = Content.Load<Texture2D>(@"minimap/charactericon");
+                        Texture2D texmapmask = Content.Load<Texture2D>(@"minimap/mapmask");
+                        CurrentScene.InitMiniMap(texminimap, texminimapchar, texmapmask, 0, GameConst.ScreenHeight - 256, 256, 256);
+
+                        CharacterTitle.BlockTexture = Content.Load<Texture2D>(@"effect/block");
+                        UIMgr.AddUIControl("Dialog_Leader", "leader_dlg", (int)UILayout.Right, (int)UILayout.Top, 0, 0, -1, 99, this);
+                    }
+                    catch (ContentLoadException e)
+                    {
+                       throw new ContentLoadException("ÔØÈë×ÊÔ´·¢Éú´íÎó£¬³ÌÐò¹Ø±Õ: " + e.Message);
+                    }
+                }
+            ), token);
+
+            contentLoadingTask.Start();
+            contentLoadingTask.ContinueWith(task =>
+            {
+                CurrentScene.GenerateClouds(cloudTextureArray);
+                CurrentScene.SortRenderChunksByLayer();
+                Thread.Sleep(10);
+                ContentLoadCompleted = true;
+            }
+             , TaskContinuationOptions.OnlyOnRanToCompletion);
+
+            contentLoadingTask.ContinueWith(task =>
+            {
+                MessageBox.Show(task.Exception.InnerException.Message);
+                this.Exit();
+            }
+            , TaskContinuationOptions.OnlyOnFaulted);
+
+            contentLoadingTask.ContinueWith(task =>
+            {
+                MessageBox.Show(task.Exception.Message);
+                this.Exit();
+            }
+           , TaskContinuationOptions.OnlyOnCanceled);
+
+
+
+            if (clientchannel != null)
+            {
+                dlgLogin = new LoginDialog();
+                dlgLogin.Location = new System.Drawing.Point((this.Window.ClientBounds.Width - dlgLogin.Size.Width) / 2 + this.Window.ClientBounds.X,
+                                                        (this.Window.ClientBounds.Height - dlgLogin.Size.Height) * 3 / 4 + this.Window.ClientBounds.Y);
+                dlgLogin.Show(System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle));
+
+
+            }
         }
+
+        private void DestoryPlayer(PlayerNet pn)
+        {
+            Player p = CurrentScene.FindNetPlayer(pn.ClientID);
+            if (p != null)
+            {
+                p.Picture.State = RenderChunk.RenderChunkState.FadeOutToDel;
+                p.Title.State = RenderChunk.RenderChunkState.FadeOutToDel;
+                CurrentScene.DelNetPlayer(p);
+            }
+            
+        }
+
+        private void CreatePlayer(PlayerNet pn)
+        {
+            while (contentLoadingTask != null && !contentLoadingTask.IsCompleted) ;
+            if (pn.ClientID == ClientID)
+            {
+                player = new Player(pn.Name, CurrentScene);
+                CharacterDefinition.PicDef pd = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
+                CharacterPic cpic = new CharacterPic(pd, 15);
+                player.Picture = cpic;
+                CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
+                title.Layer = 15;
+                title.NameString = pn.Name;
+                title.Character = player;
+                player.Title = title;
+                player.Position = new Vector2(1024 / 2, 768 / 2);
+                player.Speed = GameConst.PlayerSpeed;
+                player.ATK = GameConst.PlayerAtk;
+                player.HP = GameConst.PlayerHP;
+                player.MaxHP = GameConst.PlayerHP;
+                player.AddActionSet("Idle", CharacterState.Spawn, CharacterActionSetChangeFactor.EffectCompleted, "Spawn");
+                player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
+                player.AddPreRenderEffect("Spawn", spawnEffect);
+                player.ClientID = pn.ClientID;
+                CurrentScene.AddCharacter(player);
+                CurrentScene.Player = player;
+            }
+            else
+            {
+                Player playernet = new Player(pn.Name, CurrentScene);
+                CharacterDefinition.PicDef pd = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
+                CharacterPic cpic = new CharacterPic(pd, 15);
+                playernet.Picture = cpic;
+                CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
+                title.Layer = 15;
+                title.NameString = pn.Name;
+                title.Character = playernet;
+                playernet.Title = title;
+                playernet.Position = new Vector2(1024 / 2, 768 / 2);
+                playernet.Speed = GameConst.PlayerSpeed;
+                playernet.ATK = GameConst.PlayerAtk;
+                playernet.HP = GameConst.PlayerHP;
+                playernet.MaxHP = GameConst.PlayerHP;
+                //playernet.AddActionSet("Idle", CharacterState.Spawn, CharacterActionSetChangeFactor.EffectCompleted, "Spawn");
+                playernet.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
+                playernet.ClientID = pn.ClientID;
+                //playernet.AddPreRenderEffect("Spawn", spawnEffect);
+                CurrentScene.AddNetPlayer(playernet);
+            }
+        }
+
         /// <summary>
         /// UnloadContent will be called once per game and is the place to unload
         /// all content.
@@ -223,7 +312,8 @@ namespace demo
             // Allows the game to exit
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
                 this.Exit();
-
+            if (!ContentLoadCompleted)
+                return;
             UpdateInput();
             CurrentScene.Update(gameTime);
             UIMgr.Update(gameTime);
@@ -240,6 +330,8 @@ namespace demo
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
+            if (!ContentLoadCompleted)
+                return;
 
             GameConst.RenderCountPerFrame = 0;
             CurrentScene.RenderPrepositive();
@@ -256,7 +348,8 @@ namespace demo
             spriteBatch.End();
 
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
-            spriteBatch.DrawString(mainfont, string.Format("{0:d}, {1:d} {2:d}", (int)player.Position.X, (int)player.Position.Y, GameConst.RenderCountPerFrame), Vector2.Zero, Color.Red);
+            if (player != null)
+                spriteBatch.DrawString(mainfont, string.Format("{0:d}, {1:d} {2:d}", (int)player.Position.X, (int)player.Position.Y, GameConst.RenderCountPerFrame), Vector2.Zero, Color.Red);
             spriteBatch.End();
             base.Draw(gameTime);
         }
@@ -265,6 +358,8 @@ namespace demo
         KeyboardState _ksLast = new KeyboardState();
         public void UpdateInput()
         {
+            if (player == null)
+                return;
             KeyboardState ks = Keyboard.GetState();
             Vector4 vp = CurrentScene.Viewport;
             if (CurrentScene.State == Scene.SceneState.Map)
@@ -414,7 +509,7 @@ namespace demo
             }
 
 
-            
+
             _msLast = ms;
             _ksLast = ks;
 
@@ -435,5 +530,7 @@ namespace demo
             vp.Y = MathHelper.Clamp(vp.Y, 0.0f, (GameConst.BackgroundScale) * 2048.0f - GameConst.ScreenHeight);
             CurrentScene.Viewport = vp;
         }
+
+     
     }
 }

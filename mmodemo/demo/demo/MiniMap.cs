@@ -18,6 +18,7 @@ namespace demo
     public class MiniMap : RenderChunk, IDisposable
     {
         private List<Character> characters;
+        private List<Player> netplayers;
         private Texture2D backgroundtexture;
         private Texture2D charactertexture;
         private Texture2D masktexture;
@@ -60,6 +61,14 @@ namespace demo
             set
             {
                 characters = value;
+            }
+        }
+
+        public List<Player> NetPlayers
+        {
+            set
+            {
+                netplayers = value;
             }
         }
 
@@ -130,6 +139,12 @@ namespace demo
                         sb.Draw(charactertexture, p, null, Color.LightSlateGray, 0.0f, new Vector2(charactertexture.Width / 2, charactertexture.Height / 2), new Vector2(0.5f, 0.5f), SpriteEffects.None, 0.0f);
                 }
 
+            }
+            foreach (Player ch in netplayers)
+            {
+                p.X = ch.Position.X / scene.ActualSize.Z * size.X;
+                p.Y = ch.Position.Y / scene.ActualSize.W * size.Y;
+                sb.Draw(charactertexture, p, null, Color.Red, 0.0f, new Vector2(charactertexture.Width / 2, charactertexture.Height / 2), new Vector2(0.5f, 0.5f), SpriteEffects.None, 0.0f);
             }
             sb.End();
             //System.IO.Stream stream = TitleContainer.OpenStream("ship.png");

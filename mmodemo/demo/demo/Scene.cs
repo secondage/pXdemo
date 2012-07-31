@@ -45,6 +45,7 @@ namespace demo
 
         private List<RenderChunk> renderchunks = new List<RenderChunk>();
         private List<RenderChunk> renderchunksdefer = new List<RenderChunk>();
+        private List<Player> netplayers = new List<Player>();
         private List<Character> characters = new List<Character>();
         private List<Character> battlecharacters = new List<Character>();
         private List<Spell> spells = new List<Spell>();
@@ -210,25 +211,36 @@ namespace demo
                     if (!(ch is Player))
                     {
                         if (ch is Npc)
-                            player.AddVisibleNpc(ch as Npc);
+                        {
+                            if (player != null)
+                            {
+                                player.AddVisibleNpc(ch as Npc);
+                            }
+                        }
                         ch.Update(gametime);
                     }
                 }
-                player.Update(gametime);
-                //
-                if (player.State == CharacterState.Moving)
+                if (player != null)
                 {
-                    int f = random.Next(_fightseed);
-                    if (f == 0)
+                    player.Update(gametime);
+                    if (player.State == CharacterState.Moving)
                     {
-                        if (player.Debug_GetQuest() && !player.CompletedQuests.Contains(2))
-                            IntoBattle();
-                        _fightseed = random.Next(1000) + 500;
+                        int f = random.Next(_fightseed);
+                        if (f == 0)
+                        {
+                            if (player.Debug_GetQuest() && !player.CompletedQuests.Contains(2))
+                                IntoBattle();
+                            _fightseed = random.Next(1000) + 500;
+                        }
+                        else
+                        {
+                            _fightseed--;
+                        }
                     }
-                    else
-                    {
-                        _fightseed--;
-                    }
+                }
+                foreach (Player p in netplayers)
+                {
+                    p.Update(gametime);
                 }
             }
             else if (state == SceneState.Battle)
@@ -292,9 +304,6 @@ namespace demo
 
                 }
             }
-
-
-
             //SortRenderChunksByLayer();
         }
 
@@ -330,6 +339,29 @@ namespace demo
                     return ch;
             }
             return null;
+        }
+
+
+        public Player FindNetPlayer(long clientid)
+        {
+            if (netplayers.Count == 0)
+                return null;
+            foreach (Player p in netplayers)
+            {
+                if (p.ClientID == clientid)
+                    return p;
+            }
+            return null;
+        }
+
+        public void DelNetPlayer(Player ch)
+        {
+            netplayers.Remove(ch);
+        }
+
+        public void AddNetPlayer(Player ch)
+        {
+            netplayers.Add(ch);
         }
 
         public void AddCharacter(Character ch)
@@ -573,13 +605,13 @@ namespace demo
                                     }
                                 case "PlayerHP":
                                     {
-                                        player.HP = Convert.ToInt32(node.FirstChild.Value);
-                                        player.MaxHP = Convert.ToInt32(node.FirstChild.Value);
+                                        GameConst.PlayerHP = Convert.ToInt32(node.FirstChild.Value);
+                                        
                                         break;
                                     }
                                 case "PlayerATK":
                                     {
-                                        player.ATK = Convert.ToInt32(node.FirstChild.Value);
+                                        GameConst.PlayerAtk = Convert.ToInt32(node.FirstChild.Value);
                                         break;
                                     }
                             }
@@ -782,6 +814,17 @@ namespace demo
             turn = Turn.Player;
             player.OperateTarget = null;
             player.Operate = Character.OperateType.None;
+            foreach (Character ch in battlecharacters)
+            {
+                if (ch.TemplateID == 3)
+                {
+                    if (ch.HP <= ch.MaxHP / 2)
+                    {
+                        if (!_battlebackgroundchanged)
+                            ChangeBackground(SceneState.Battle);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -957,6 +1000,15 @@ namespace demo
                 monster.Title.State = RenderChunk.RenderChunkState.FadeOutToDel;
                 battlecharacters.Remove(monster);
                 actionlist.Remove(monster.Order);
+                if (monster.TemplateID == 3)
+                {
+                    Npc npc = player.Scene.GetCharacterByName("boss") as Npc;
+                    if (npc != null)
+                    {
+                        npc.Picture.State = RenderChunk.RenderChunkState.Invisible;
+                        npc.Title.State = RenderChunk.RenderChunkState.Invisible;
+                    }
+                }
                 return;
             }
 
@@ -1344,6 +1396,7 @@ namespace demo
         {
             minimap = new MiniMap();
             minimap.Characters = characters;
+            minimap.NetPlayers = netplayers;
             minimap.Scene = this;
             minimap.Initialize(btex, ctex, mtex, w, h);
             minimap.Position = new Vector2(x, y);
@@ -1380,6 +1433,7 @@ namespace demo
                 cloud.Speed = new Vector2((float)random.NextDouble() * (30000000.0f / (cloud.ActualSize.X * cloud.ActualSize.Y)), 0);
 
                 AddRenderChunk(cloud);
+           
             }
         }
     }

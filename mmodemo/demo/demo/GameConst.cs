@@ -24,6 +24,8 @@ namespace demo
         static private int fixedenemynum = -1;
 
         static public float PlayerSpeed = 300;
+        static public int PlayerAtk = 100;
+        static public int PlayerHP = 200;
         static public int RenderCountPerFrame = 0;
 
         static public int FixedEnemyNum

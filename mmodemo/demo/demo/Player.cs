@@ -41,6 +41,7 @@ namespace demo
             }
         }
 
+        public long ClientID { get; set; }
 
         public List<int> CompletedQuests
         {
