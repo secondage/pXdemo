@@ -116,7 +116,7 @@ namespace demo
             p.X -= scene.Viewport.X / ts.X;
             p.Y -= scene.Viewport.Y / ts.Y;
             sb.Begin(SpriteSortMode.Immediate, null, null, null, null, maskEffect);
-            sb.Draw(backgroundtexture, p, null, Color.White, 0.0f, Vector2.Zero, /*new Vector2(ts.X / backgroundtexture.Width, ts.Y / backgroundtexture.Height) * scalex*/Vector2.One * scalex, SpriteEffects.None, 0.0f);
+            //sb.Draw(backgroundtexture, p, null, Color.White, 0.0f, Vector2.Zero, /*new Vector2(ts.X / backgroundtexture.Width, ts.Y / backgroundtexture.Height) * scalex*/Vector2.One * scalex, SpriteEffects.None, 0.0f);
             sb.End();
             //Vector2 p = new Vector2();
             sb.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);

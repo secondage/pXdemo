@@ -117,6 +117,7 @@ namespace demo
         //public event EventHandler OnActionSetsOver;
 
         protected int templateid;
+        public long ClientID { get; set; }
 
         protected int hp = 100;
         protected int maxhp = 100;
@@ -463,6 +464,11 @@ namespace demo
                             {
                                 OnActionCompleted(this, new EventArgs());
                             }*/
+                            if (ClientID != 0)
+                            {
+                                StartMoveSyncTimer();
+                                MainGame.SendRequestMovementMsg(this);
+                            }
                             break;
                         }
                     case CharacterState.Idle:
@@ -623,7 +629,20 @@ namespace demo
 
         protected virtual void UpdateMovement(GameTime gametime)
         {
+            UpdateMoveSyncTimer(gametime);
+        }
 
+        private void UpdateMoveSyncTimer(GameTime gametime)
+        {
+            if (__movesynctime >= 0.0)
+            {
+                __movesynctime += gametime.ElapsedGameTime.TotalSeconds;
+                if (__movesynctime >= 1.0)
+                {
+                    MainGame.SendMoveReportMsg(this);
+                    __movesynctime = 0.0;
+                }
+            }
         }
 
         public void PushPosition()
@@ -764,6 +783,16 @@ namespace demo
                 }
             }
             currentactionset = null;
+        }
+
+        double __movesynctime = -1.0;
+        public void StartMoveSyncTimer()
+        {
+            __movesynctime = 0;
+        }
+        public void StopMoveSyncTimer()
+        {
+            __movesynctime = -1.0;
         }
 
         static public Character CreateCharacter(string path, Scene scene, string name = "")

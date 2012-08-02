@@ -41,7 +41,7 @@ namespace demo
             }
         }
 
-        public long ClientID { get; set; }
+       
 
         public List<int> CompletedQuests
         {
@@ -51,7 +51,7 @@ namespace demo
             }
         }
 
-        void UpdateSceneScroll()
+        public void UpdateSceneScroll()
         {
             if (scene.State == demo.Scene.SceneState.Battle)
                 return;

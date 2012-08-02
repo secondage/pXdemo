@@ -6,7 +6,7 @@
     <type>Monster</type>
     <tmpid>1</tmpid>
     <pics>
-      <Item>char2</Item>
+      <Item>char3</Item>
     </pics>
     <hp>70</hp>
     <maxhp>70</maxhp>

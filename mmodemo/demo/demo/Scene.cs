@@ -47,6 +47,7 @@ namespace demo
         private List<RenderChunk> renderchunksdefer = new List<RenderChunk>();
         private List<Player> netplayers = new List<Player>();
         private List<Character> characters = new List<Character>();
+        private List<Character> charactersdefer = new List<Character>();
         private List<Character> battlecharacters = new List<Character>();
         private List<Spell> spells = new List<Spell>();
         private string name;
@@ -159,6 +160,10 @@ namespace demo
         {
             foreach (RenderChunk rc in renderchunks)
             {
+             //   if (rc is Background || rc is Cloud)
+               //     continue;
+                //if (rc is PreRenderEffect)
+                 //   continue;
                 rc.Render(sb);
             }
 
@@ -263,6 +268,13 @@ namespace demo
                 UpdateNextActionRound(gametime);
             }
 
+
+            foreach (Character ch in charactersdefer)
+            {
+                AddCharacter(ch);
+            }
+            charactersdefer.Clear();
+
             foreach (RenderChunk rc in renderchunksdefer)
             {
                 AddRenderChunk(rc);
@@ -341,6 +353,22 @@ namespace demo
             return null;
         }
 
+        public void SyncPlayer(ProjectXServer.Messages.PlayerPositionUpdate msg)
+        {
+            Player netplayer = FindNetPlayer(msg.ClientID);
+            if (netplayer != null)
+            {
+                netplayer.Position = new Vector2(msg.Position[0], msg.Position[1]);
+            }
+            else
+            {
+                if (player.ClientID == msg.ClientID)
+                {
+                    player.Position = new Vector2(msg.Position[0], msg.Position[1]);
+                }
+            }
+        }
+
 
         public Player FindNetPlayer(long clientid)
         {
@@ -362,6 +390,11 @@ namespace demo
         public void AddNetPlayer(Player ch)
         {
             netplayers.Add(ch);
+        }
+
+        public void AddCharacterDef(Character ch)
+        {
+            charactersdefer.Add(ch);
         }
 
         public void AddCharacter(Character ch)

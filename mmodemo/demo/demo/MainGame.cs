@@ -44,8 +44,6 @@ namespace demo
 
         Texture2D[] cloudTextureArray = new Texture2D[15];
 
-        List<NetSyncObject.PlayerNet> players = new List<NetSyncObject.PlayerNet>();
-
         public MainGame()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -64,9 +62,20 @@ namespace demo
             this.Window.Title = "mmodemo";
 
 #endif
+            Control ctrl = System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle);
+            ctrl.Move += new EventHandler(MainWindow_Move);
             GameCursor.Initialize(Cursor.Current.Handle);
             GameCursor.SetCursor(GameCursor.CursorType.Normal);
 
+        }
+
+        protected void MainWindow_Move(object sender, EventArgs args)
+        {
+            if (dlgLogin != null)
+            {
+                dlgLogin.Location = new System.Drawing.Point((this.Window.ClientBounds.Width - dlgLogin.Size.Width) / 2 + this.Window.ClientBounds.X,
+                                                        (this.Window.ClientBounds.Height - dlgLogin.Size.Height) * 3 / 4 + this.Window.ClientBounds.Y);
+            }
         }
 
         protected void Graphics_DeviceCreated(Object sender, EventArgs args)
@@ -119,7 +128,7 @@ namespace demo
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            GraphicsDevice.ScissorRectangle = new Rectangle(0, 0, 1024, 768);
+            GraphicsDevice.ScissorRectangle = new Rectangle(0, 0, GameConst.ScreenWidth, GameConst.ScreenHeight);
 
 
 
@@ -194,7 +203,7 @@ namespace demo
                 }
             ), token);
 
-            contentLoadingTask.Start();
+           
             contentLoadingTask.ContinueWith(task =>
             {
                 CurrentScene.GenerateClouds(cloudTextureArray);
@@ -218,6 +227,7 @@ namespace demo
             }
            , TaskContinuationOptions.OnlyOnCanceled);
 
+            contentLoadingTask.Start();
 
 
             if (clientchannel != null)
@@ -229,9 +239,18 @@ namespace demo
 
 
             }
+            else
+            {
+                ProjectXServer.Messages.PlayerLoginMsg msg = new ProjectXServer.Messages.PlayerLoginMsg();
+                msg.ClientID = 0;
+                msg.Name = "player1";
+                msg.Position = new float[] {GameConst.ScreenWidth / 2, GameConst.ScreenHeight / 2};
+                msg.Speed = GameConst.PlayerSpeed;
+                CreatePlayer(msg);
+            }
         }
 
-        private void DestoryPlayer(PlayerNet pn)
+        private void DestoryPlayer(ProjectXServer.Messages.PlayerLogoutMsg pn)
         {
             Player p = CurrentScene.FindNetPlayer(pn.ClientID);
             if (p != null)
@@ -243,9 +262,9 @@ namespace demo
             
         }
 
-        private void CreatePlayer(PlayerNet pn)
+        private void CreatePlayer(ProjectXServer.Messages.PlayerLoginMsg pn)
         {
-            while (contentLoadingTask != null && !contentLoadingTask.IsCompleted) ;
+            contentLoadingTask.Wait();
             if (pn.ClientID == ClientID)
             {
                 player = new Player(pn.Name, CurrentScene);
@@ -257,8 +276,8 @@ namespace demo
                 title.NameString = pn.Name;
                 title.Character = player;
                 player.Title = title;
-                player.Position = new Vector2(1024 / 2, 768 / 2);
-                player.Speed = GameConst.PlayerSpeed;
+                player.Position = new Vector2(pn.Position[0], pn.Position[1]);
+                player.Speed = pn.Speed;//GameConst.PlayerSpeed;
                 player.ATK = GameConst.PlayerAtk;
                 player.HP = GameConst.PlayerHP;
                 player.MaxHP = GameConst.PlayerHP;
@@ -266,8 +285,9 @@ namespace demo
                 player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
                 player.AddPreRenderEffect("Spawn", spawnEffect);
                 player.ClientID = pn.ClientID;
-                CurrentScene.AddCharacter(player);
+                CurrentScene.AddCharacterDef(player);
                 CurrentScene.Player = player;
+                player.UpdateSceneScroll();
             }
             else
             {
@@ -280,8 +300,8 @@ namespace demo
                 title.NameString = pn.Name;
                 title.Character = playernet;
                 playernet.Title = title;
-                playernet.Position = new Vector2(1024 / 2, 768 / 2);
-                playernet.Speed = GameConst.PlayerSpeed;
+                playernet.Position = new Vector2(pn.Position[0], pn.Position[1]);
+                playernet.Speed = pn.Speed;// GameConst.PlayerSpeed;
                 playernet.ATK = GameConst.PlayerAtk;
                 playernet.HP = GameConst.PlayerHP;
                 playernet.MaxHP = GameConst.PlayerHP;
@@ -335,12 +355,9 @@ namespace demo
 
             GameConst.RenderCountPerFrame = 0;
             CurrentScene.RenderPrepositive();
-
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
             CurrentScene.Render(spriteBatch);
-
             spriteBatch.End();
-
             CurrentScene.RenderPostpositive();
 
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullCounterClockwise);
@@ -360,6 +377,7 @@ namespace demo
         {
             if (player == null)
                 return;
+           
             KeyboardState ks = Keyboard.GetState();
             Vector4 vp = CurrentScene.Viewport;
             if (CurrentScene.State == Scene.SceneState.Map)
@@ -476,6 +494,7 @@ namespace demo
                                         player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Target);
                                         player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
                                         player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                                        
                                     }
                                     else
                                     {
@@ -530,7 +549,5 @@ namespace demo
             vp.Y = MathHelper.Clamp(vp.Y, 0.0f, (GameConst.BackgroundScale) * 2048.0f - GameConst.ScreenHeight);
             CurrentScene.Viewport = vp;
         }
-
-     
     }
 }

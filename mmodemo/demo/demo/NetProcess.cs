@@ -46,18 +46,17 @@ namespace demo
             else if (adapter.Message is ProjectXServer.Messages.PlayerLoginMsg)
             {
                 ProjectXServer.Messages.PlayerLoginMsg plm = (ProjectXServer.Messages.PlayerLoginMsg)adapter.Message;
-                PlayerNet pn = new PlayerNet();
-                pn.ClientID = plm.ClientID;
-                pn.Name = plm.Name;
-                CreatePlayer(pn);
+                CreatePlayer(plm);
             }
             else if (adapter.Message is ProjectXServer.Messages.PlayerLogoutMsg)
             {
                 ProjectXServer.Messages.PlayerLogoutMsg plm = (ProjectXServer.Messages.PlayerLogoutMsg)adapter.Message;
-                PlayerNet pn = new PlayerNet();
-                pn.ClientID = plm.ClientID;
-                pn.Name = plm.Name;
-                DestoryPlayer(pn);
+                DestoryPlayer(plm);
+            }
+            else if (adapter.Message is ProjectXServer.Messages.PlayerPositionUpdate)
+            {
+                ProjectXServer.Messages.PlayerPositionUpdate msg = (ProjectXServer.Messages.PlayerPositionUpdate)adapter.Message;
+                CurrentScene.SyncPlayer(msg);
             }
         }
 
@@ -67,9 +66,28 @@ namespace demo
 
         public static void LoginToServer(string username, string password)
         {
-            ProjectXServer.Messages.PlayerLoginMsg plm = new ProjectXServer.Messages.PlayerLoginMsg();
+            ProjectXServer.Messages.PlayerLoginRequestMsg plm = new ProjectXServer.Messages.PlayerLoginRequestMsg();
             plm.Name = username;
+
             ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, plm);
+        }
+
+        public static void SendRequestMovementMsg(Character player)
+        {
+            ProjectXServer.Messages.PlayerMoveRequest msg = new ProjectXServer.Messages.PlayerMoveRequest();
+            msg.Target = new float[2];
+            msg.Target[0] = player.Target.X;
+            msg.Target[1] = player.Target.Y;
+            ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, msg);
+        }
+
+        public static void SendMoveReportMsg(Character player)
+        {
+            ProjectXServer.Messages.PlayerPositioReport msg = new ProjectXServer.Messages.PlayerPositioReport();
+            msg.Position = new float[2];
+            msg.Position[0] = player.Position.X;
+            msg.Position[1] = player.Position.Y;
+            ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, msg);
         }
 
     }
