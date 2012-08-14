@@ -16,6 +16,7 @@ namespace CharacterDefinition
         public int width;
         public int height;
         public string texture;
+        public float size;
         public List<AnimDef> anims;
     }
     public class AnimDef

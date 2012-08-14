@@ -18,7 +18,7 @@ namespace demo
     public class MiniMap : RenderChunk, IDisposable
     {
         private List<Character> characters;
-        private List<Player> netplayers;
+        private List<NetPlayer> netplayers;
         private Texture2D backgroundtexture;
         private Texture2D charactertexture;
         private Texture2D masktexture;
@@ -31,21 +31,20 @@ namespace demo
         
         public override Vector2 Size
         {
-            get
-            {
-                return size;
-            }
             set
             {
-                size = value;
                 try
                 {
-                    rendersize.X = size.X / (float)backgroundtexture.Width;
-                    rendersize.Y = size.Y / (float)backgroundtexture.Height;
+                    rendersize.X = Size.X / (float)backgroundtexture.Width;
+                    rendersize.Y = Size.Y / (float)backgroundtexture.Height;
                 }
                 catch
                 {
                     rendersize = Vector2.One;
+                }
+                finally
+                {
+                    base.Size = value;
                 }
             }
         }
@@ -64,7 +63,7 @@ namespace demo
             }
         }
 
-        public List<Player> NetPlayers
+        public List<NetPlayer> NetPlayers
         {
             set
             {
@@ -77,8 +76,7 @@ namespace demo
             backgroundtexture = btex;
             charactertexture = ctex;
             masktexture = mtex;
-            size.X = w;
-            size.Y = h;
+            Size = new Vector2(w, h);
             rendersize.X = (float)w / (float)backgroundtexture.Width;
             rendersize.Y = (float)h / (float)backgroundtexture.Height;
             rendertarget = new RenderTarget2D(GameConst.Graphics.GraphicsDevice, w, h, false, SurfaceFormat.Color, DepthFormat.None);
@@ -104,11 +102,11 @@ namespace demo
             float scalex = 2.0f;
             s.X = (float)backgroundtexture.Width / (float)scene.ActualSize.Z;
             s.Y = (float)backgroundtexture.Height / (float)scene.ActualSize.W;
-            ts.X = size.X * ((float)scene.ActualSize.Z / (float)GameConst.ScreenWidth);
-            ts.Y = size.Y * ((float)scene.ActualSize.W / (float)GameConst.ScreenHeight);
+            ts.X = Size.X * ((float)scene.ActualSize.Z / (float)GameConst.ScreenWidth);
+            ts.Y = Size.Y * ((float)scene.ActualSize.W / (float)GameConst.ScreenHeight);
 
-            ts.X = ((float)scene.ActualSize.Z - (float)GameConst.ScreenWidth) / ((float)backgroundtexture.Width * scalex - size.X);
-            ts.Y = ((float)scene.ActualSize.W - (float)GameConst.ScreenHeight) / ((float)backgroundtexture.Height * scalex - size.Y);
+            ts.X = ((float)scene.ActualSize.Z - (float)GameConst.ScreenWidth) / ((float)backgroundtexture.Width * scalex - Size.X);
+            ts.Y = ((float)scene.ActualSize.W - (float)GameConst.ScreenHeight) / ((float)backgroundtexture.Height * scalex - Size.Y);
             //ts.X = scene.Viewport.X / (float)scene.ActualSize.Z
 
             //p.X -= scene.Viewport.X * s.X * (ts.X / backgroundtexture.Width) * scalex;
@@ -123,8 +121,8 @@ namespace demo
             foreach (Character ch in characters)
             {
                 //ch.Position;
-                p.X = ch.Position.X / scene.ActualSize.Z * size.X;
-                p.Y = ch.Position.Y / scene.ActualSize.W * size.Y;
+                p.X = ch.Position.X / scene.ActualSize.Z * Size.X;
+                p.Y = ch.Position.Y / scene.ActualSize.W * Size.Y;
                 //p += position;
                 if (ch is Player)
                     sb.Draw(charactertexture, p, null, Color.Green, 0.0f, new Vector2(charactertexture.Width / 2, charactertexture.Height / 2), new Vector2(0.5f, 0.5f), SpriteEffects.None, 0.0f);
@@ -142,8 +140,8 @@ namespace demo
             }
             foreach (Player ch in netplayers)
             {
-                p.X = ch.Position.X / scene.ActualSize.Z * size.X;
-                p.Y = ch.Position.Y / scene.ActualSize.W * size.Y;
+                p.X = ch.Position.X / scene.ActualSize.Z * Size.X;
+                p.Y = ch.Position.Y / scene.ActualSize.W * Size.Y;
                 sb.Draw(charactertexture, p, null, Color.Red, 0.0f, new Vector2(charactertexture.Width / 2, charactertexture.Height / 2), new Vector2(0.5f, 0.5f), SpriteEffects.None, 0.0f);
             }
             sb.End();

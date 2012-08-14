@@ -6,6 +6,7 @@ using System.Text;
 using Beetle;
 using System.Windows.Forms;
 using NetSyncObject;
+using System.Security.Cryptography;
 
 namespace demo
 {
@@ -25,6 +26,14 @@ namespace demo
                 {
                     MessageBox.Show("登录失败");
                 }
+                else if (plrm.Result == ProjectXServer.Messages.LoginResult.Failed_Notfound)
+                {
+                    MessageBox.Show("用户名不存在");
+                }
+                else if (plrm.Result == ProjectXServer.Messages.LoginResult.Failed_Password)
+                {
+                    MessageBox.Show("密码错误");
+                }
                 else
                 {
                     try
@@ -35,12 +44,13 @@ namespace demo
                             dlgLogin.Dispose();
                             dlgLogin = null;
                         }));
-                     }
+                    }
                     catch (InvalidOperationException ie)
                     {
                         MessageBox.Show(ie.Message);
                     }
                     ClientID = plrm.ClientID;
+
                 }
             }
             else if (adapter.Message is ProjectXServer.Messages.PlayerLoginMsg)
@@ -53,10 +63,26 @@ namespace demo
                 ProjectXServer.Messages.PlayerLogoutMsg plm = (ProjectXServer.Messages.PlayerLogoutMsg)adapter.Message;
                 DestoryPlayer(plm);
             }
+            else if (adapter.Message is ProjectXServer.Messages.PlayerTimeSyncMsg)
+            {
+                ProjectXServer.Messages.PlayerTimeSyncMsg msg = (ProjectXServer.Messages.PlayerTimeSyncMsg)adapter.Message;
+                GameConst.ServerDurationTime = msg.Duration;
+                GameConst.ServerTotalTime = msg.Total;
+            }
             else if (adapter.Message is ProjectXServer.Messages.PlayerPositionUpdate)
             {
-                ProjectXServer.Messages.PlayerPositionUpdate msg = (ProjectXServer.Messages.PlayerPositionUpdate)adapter.Message;
-                CurrentScene.SyncPlayer(msg);
+               ProjectXServer.Messages.PlayerPositionUpdate msg = (ProjectXServer.Messages.PlayerPositionUpdate)adapter.Message;
+               CurrentScene.UpdatePlayerPosition(msg);
+            }
+            else if (adapter.Message is ProjectXServer.Messages.PlayerMoveRequest)
+            {
+                ProjectXServer.Messages.PlayerMoveRequest msg = (ProjectXServer.Messages.PlayerMoveRequest)adapter.Message;
+                CurrentScene.UpdatePlayerMovement(msg);
+            }
+            else if (adapter.Message is ProjectXServer.Messages.PlayerTargetChanged)
+            {
+                ProjectXServer.Messages.PlayerTargetChanged msg = (ProjectXServer.Messages.PlayerTargetChanged)adapter.Message;
+                CurrentScene.UpdatePlayerTarget(msg);
             }
         }
 
@@ -66,8 +92,11 @@ namespace demo
 
         public static void LoginToServer(string username, string password)
         {
+            MD5 m = new MD5CryptoServiceProvider();
+            byte[] s = m.ComputeHash(UnicodeEncoding.UTF8.GetBytes(password));
             ProjectXServer.Messages.PlayerLoginRequestMsg plm = new ProjectXServer.Messages.PlayerLoginRequestMsg();
             plm.Name = username;
+            plm.Password = BitConverter.ToString(s);
 
             ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, plm);
         }
@@ -78,6 +107,21 @@ namespace demo
             msg.Target = new float[2];
             msg.Target[0] = player.Target.X;
             msg.Target[1] = player.Target.Y;
+            msg.Position = new float[2];
+            msg.Position[0] = player.Position.X;
+            msg.Position[1] = player.Position.Y;
+            ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, msg);
+        }
+
+        public static void SendTargetChangedMsg(Player player)
+        {
+            ProjectXServer.Messages.PlayerTargetChanged msg = new ProjectXServer.Messages.PlayerTargetChanged();
+            msg.Target = new float[2];
+            msg.Target[0] = player.Target.X;
+            msg.Target[1] = player.Target.Y;
+            msg.Position = new float[2];
+            msg.Position[0] = player.Position.X;
+            msg.Position[1] = player.Position.Y;
             ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, msg);
         }
 
@@ -90,5 +134,13 @@ namespace demo
             ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, msg);
         }
 
+        public static void SendMoveFinishMsg(Character player)
+        {
+            ProjectXServer.Messages.PlayerStopRequest msg = new ProjectXServer.Messages.PlayerStopRequest();
+            msg.Position = new float[2];
+            msg.Position[0] = player.Position.X;
+            msg.Position[1] = player.Position.Y;
+            ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, msg);
+        }
     }
 }

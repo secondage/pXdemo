@@ -140,7 +140,8 @@ namespace demo.uicontrols
             }
             set
             {
-                throw new NotSupportedException(ToString() + ":setSize");
+                //throw new NotSupportedException(ToString() + ":setSize");
+                base.Size = value;
             }
         }
 
@@ -296,9 +297,10 @@ namespace demo.uicontrols
                         }
                     }
                 }
+                Vector2 _size = Size;
                 if (rendersize.X == 0)
                 {
-                    size.X = 1.0f;
+                    _size.X = 1.0f;
                     if (texture != null)
                         controlrect.Width = srcrect.Width;
                 }
@@ -306,14 +308,14 @@ namespace demo.uicontrols
                 {
                     if (texture != null)
                     {
-                        size.X = (float)rendersize.X / (float)srcrect.Width;
+                        _size.X = (float)rendersize.X / (float)srcrect.Width;
                     }
                     else
-                        size.Y = 1.0f;
+                        _size.Y = 1.0f;
                 }
                 if (rendersize.Y == 0)
                 {
-                    size.Y = 1.0f;
+                    _size.Y = 1.0f;
                     if (texture != null)
                         controlrect.Height = srcrect.Height;
                 }
@@ -321,11 +323,12 @@ namespace demo.uicontrols
                 {
                     if (texture != null)
                     {
-                        size.Y = (float)rendersize.Y / (float)srcrect.Height;
+                        _size.Y = (float)rendersize.Y / (float)srcrect.Height;
                     }
                     else
-                        size.Y = 1.0f;
+                        _size.Y = 1.0f;
                 }
+                Size = _size;
                 //sizedirty = false;
                 Position = position; //make controlrect
             }

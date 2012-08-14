@@ -5,6 +5,8 @@
     <PlayerSpeed>300</PlayerSpeed>
     <PlayerHP>300</PlayerHP>
     <PlayerATK>60</PlayerATK>
+    <BossRushMode>2</BossRushMode>
+    <BossRushMode1Offset>200</BossRushMode1Offset>
   </Config>
   <NpcDef>
     <Npc>

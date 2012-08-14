@@ -22,11 +22,19 @@ namespace demo
         static private SpriteFont currentfont;
         static private GameWindow currentgamewindow;
         static private int fixedenemynum = -1;
+        //static private Vector2 scale = new Vector2(0.78125f, 0.78125f);
+        static private Vector2 scale = new Vector2(1, 1);
 
         static public float PlayerSpeed = 300;
         static public int PlayerAtk = 100;
         static public int PlayerHP = 200;
         static public int RenderCountPerFrame = 0;
+
+        static public double ServerDurationTime = 0;
+        static public double ServerTotalTime = 0;
+
+        static public int BossRushMode = 0;
+        static public int BossRushMode1Offset = 60; 
 
         static public int FixedEnemyNum
         {
@@ -142,6 +150,18 @@ namespace demo
             set
             {
                 backgroundScale = value;
+            }
+        }
+
+        static public Vector2 ForegroundScale
+        {
+            get
+            {
+                return scale;
+            }
+            set
+            {
+                scale = value;
             }
         }
 

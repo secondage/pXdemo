@@ -18,6 +18,7 @@ using Beetle;
 using NetSyncObject;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Xml;
 
 namespace demo
 {
@@ -101,7 +102,39 @@ namespace demo
             //init net client
             try
             {
-                clientchannel = TcpServer.CreateClient("127.0.0.1", 9610);
+                string ipaddress = "127.0.0.1";
+                int port = 9610;
+                System.IO.Stream stream = TitleContainer.OpenStream("servers.xml");
+                if (stream != null)
+                {
+                    XmlDocument doc = new XmlDocument();
+                    doc.Load(stream);
+                    XmlNodeList constdef = doc.GetElementsByTagName("Server", "");
+                    if (constdef.Count > 0)
+                    {
+                        for (int i = 0; i < constdef[0].ChildNodes.Count; ++i)
+                        {
+                            XmlNode node = constdef[0].ChildNodes[i];
+                            if (node != null)
+                            {
+                                switch (node.Name)
+                                {
+                                    case "Ip":
+                                        {
+                                            ipaddress = (node.FirstChild.Value);
+                                            break;
+                                        }
+                                    case "Port":
+                                        {
+                                            port = Convert.ToInt32(node.FirstChild.Value);
+                                            break;
+                                        }
+                                }
+                            }
+                        }
+                    }
+                }
+                clientchannel = TcpServer.CreateClient(ipaddress, port);
                 clientchannel.SetPackage<ProjectXServer.Messages.HeadSizePackage>().ReceiveMessage = ReceiveMessage;
                 clientchannel.ChannelDisposed += new EventChannelDisposed(channel_ChannelDisposed);
                 clientchannel.BeginReceive();
@@ -129,29 +162,6 @@ namespace demo
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             GraphicsDevice.ScissorRectangle = new Rectangle(0, 0, GameConst.ScreenWidth, GameConst.ScreenHeight);
-
-
-
-            // add backgroud
-            /*Texture2D texbg0 = Content.Load<Texture2D>(@"background/yun_a0");
-            Texture2D texbg1 = Content.Load<Texture2D>(@"background/yun_a1");
-            Texture2D texbg2 = Content.Load<Texture2D>(@"background/yun_a2");
-            Texture2D texbg3 = Content.Load<Texture2D>(@"background/yun_b1");
-
-            Background bg = new Background(texbg0, 0);
-            bg.Size = new Vector2(GameConst.BackgroundScale, GameConst.BackgroundScale);
-            CurrentScene.AddRenderChunk(bg);
-            bg = new Background(texbg1, 1);
-            bg.Size = new Vector2(GameConst.BackgroundScale, GameConst.BackgroundScale);
-            CurrentScene.AddRenderChunk(bg);
-            bg = new Background(texbg2, 2);
-            bg.Size = new Vector2(GameConst.BackgroundScale, GameConst.BackgroundScale);
-            CurrentScene.AddRenderChunk(bg);
-            bg = new Background(texbg3, 3);
-            bg.Size = new Vector2(GameConst.BackgroundScale, GameConst.BackgroundScale);
-            CurrentScene.AddRenderChunk(bg);*/
-            //var tokenSource = new CancellationTokenSource();
-            //var token = tokenSource.Token;
             var source = new CancellationTokenSource();
             var token = source.Token;
             contentLoadingTask = new System.Threading.Tasks.Task(new Action(() =>
@@ -168,7 +178,7 @@ namespace demo
                         CharacterTitle.QuestCompletedTexture = Content.Load<Texture2D>(@"questicon/done");
                         CharacterTitle.QuestNonCompletedTexture = Content.Load<Texture2D>(@"questicon/notdone");
 
-                        CurrentScene.LoadBackground();
+                        
                         // load cloud texture
                         for (int i = 0; i < 15; ++i)
                         {
@@ -185,7 +195,7 @@ namespace demo
                         //init character
                         Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
                         CurrentScene.LoadGameData();
-
+                        CurrentScene.LoadBackground();
 
 
                         Texture2D texminimap = Content.Load<Texture2D>(@"minimap/scene1");
@@ -194,7 +204,11 @@ namespace demo
                         CurrentScene.InitMiniMap(texminimap, texminimapchar, texmapmask, 0, GameConst.ScreenHeight - 256, 256, 256);
 
                         CharacterTitle.BlockTexture = Content.Load<Texture2D>(@"effect/block");
-                        UIMgr.AddUIControl("Dialog_Leader", "leader_dlg", (int)UILayout.Right, (int)UILayout.Top, 0, 0, -1, 99, this);
+                        //UIMgr.AddUIControl("Dialog_Leader", "leader_dlg", (int)UILayout.Right, (int)UILayout.Top, 0, 0, -1, 99, this);
+                        CurrentScene.GenerateClouds(cloudTextureArray);
+                        CurrentScene.SortRenderChunksByLayer();
+                        Thread.Sleep(10);
+                        ContentLoadCompleted = true;
                     }
                     catch (ContentLoadException e)
                     {
@@ -202,16 +216,6 @@ namespace demo
                     }
                 }
             ), token);
-
-           
-            contentLoadingTask.ContinueWith(task =>
-            {
-                CurrentScene.GenerateClouds(cloudTextureArray);
-                CurrentScene.SortRenderChunksByLayer();
-                Thread.Sleep(10);
-                ContentLoadCompleted = true;
-            }
-             , TaskContinuationOptions.OnlyOnRanToCompletion);
 
             contentLoadingTask.ContinueWith(task =>
             {
@@ -229,15 +233,16 @@ namespace demo
 
             contentLoadingTask.Start();
 
-
             if (clientchannel != null)
             {
                 dlgLogin = new LoginDialog();
-                dlgLogin.Location = new System.Drawing.Point((this.Window.ClientBounds.Width - dlgLogin.Size.Width) / 2 + this.Window.ClientBounds.X,
-                                                        (this.Window.ClientBounds.Height - dlgLogin.Size.Height) * 3 / 4 + this.Window.ClientBounds.Y);
+                System.Drawing.Size size = dlgLogin.Size;
+                size.Width = (int)((float)(size.Width) * GameConst.ForegroundScale.X);
+                size.Height = (int)((float)(size.Height) * GameConst.ForegroundScale.Y);
+                dlgLogin.Location = new System.Drawing.Point((this.Window.ClientBounds.Width - size.Width) / 2 + this.Window.ClientBounds.X,
+                                                        (this.Window.ClientBounds.Height - size.Height) * 3 / 4 + this.Window.ClientBounds.Y);
+                dlgLogin.Size = size;
                 dlgLogin.Show(System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle));
-
-
             }
             else
             {
@@ -246,13 +251,17 @@ namespace demo
                 msg.Name = "player1";
                 msg.Position = new float[] {GameConst.ScreenWidth / 2, GameConst.ScreenHeight / 2};
                 msg.Speed = GameConst.PlayerSpeed;
+                msg.ATK = 500;
+                msg.DEF = 30;
+                msg.HP = 1000;
+                msg.MaxHP = 1000;
                 CreatePlayer(msg);
             }
         }
 
         private void DestoryPlayer(ProjectXServer.Messages.PlayerLogoutMsg pn)
         {
-            Player p = CurrentScene.FindNetPlayer(pn.ClientID);
+            NetPlayer p = CurrentScene.FindNetPlayer(pn.ClientID);
             if (p != null)
             {
                 p.Picture.State = RenderChunk.RenderChunkState.FadeOutToDel;
@@ -278,9 +287,10 @@ namespace demo
                 player.Title = title;
                 player.Position = new Vector2(pn.Position[0], pn.Position[1]);
                 player.Speed = pn.Speed;//GameConst.PlayerSpeed;
-                player.ATK = GameConst.PlayerAtk;
-                player.HP = GameConst.PlayerHP;
-                player.MaxHP = GameConst.PlayerHP;
+                player.ATK = pn.ATK;//GameConst.PlayerAtk;
+                player.DEF = pn.DEF;//GameConst.PlayerAtk;
+                player.HP = pn.HP;//GameConst.PlayerHP;
+                player.MaxHP = pn.MaxHP;// GameConst.PlayerHP;
                 player.AddActionSet("Idle", CharacterState.Spawn, CharacterActionSetChangeFactor.EffectCompleted, "Spawn");
                 player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
                 player.AddPreRenderEffect("Spawn", spawnEffect);
@@ -288,10 +298,11 @@ namespace demo
                 CurrentScene.AddCharacterDef(player);
                 CurrentScene.Player = player;
                 player.UpdateSceneScroll();
+                this.Window.Title = pn.Name;
             }
             else
             {
-                Player playernet = new Player(pn.Name, CurrentScene);
+                NetPlayer playernet = new NetPlayer(pn.Name, CurrentScene);
                 CharacterDefinition.PicDef pd = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
                 CharacterPic cpic = new CharacterPic(pd, 15);
                 playernet.Picture = cpic;
@@ -302,9 +313,10 @@ namespace demo
                 playernet.Title = title;
                 playernet.Position = new Vector2(pn.Position[0], pn.Position[1]);
                 playernet.Speed = pn.Speed;// GameConst.PlayerSpeed;
-                playernet.ATK = GameConst.PlayerAtk;
-                playernet.HP = GameConst.PlayerHP;
-                playernet.MaxHP = GameConst.PlayerHP;
+                player.ATK = pn.ATK;//GameConst.PlayerAtk;
+                player.DEF = pn.DEF;//GameConst.PlayerAtk;
+                player.HP = pn.HP;//GameConst.PlayerHP;
+                player.MaxHP = pn.MaxHP;// GameConst.PlayerHP;
                 //playernet.AddActionSet("Idle", CharacterState.Spawn, CharacterActionSetChangeFactor.EffectCompleted, "Spawn");
                 playernet.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
                 playernet.ClientID = pn.ClientID;
@@ -373,9 +385,13 @@ namespace demo
 
         MouseState _msLast = new MouseState();
         KeyboardState _ksLast = new KeyboardState();
+        HiPerfTimer clicktimer = new HiPerfTimer();
         public void UpdateInput()
         {
             if (player == null)
+                return;
+            Control ctrl = System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle);
+            if (Form.ActiveForm == null || !Form.ActiveForm.Equals(ctrl))
                 return;
            
             KeyboardState ks = Keyboard.GetState();
@@ -469,8 +485,13 @@ namespace demo
                         //
                         if (CurrentScene.State == Scene.SceneState.Map)
                         {
-
-                            if (player.State == CharacterState.Idle || player.State == CharacterState.Moving)
+                            if (clicktimer == null)
+                            {
+                                clicktimer = new HiPerfTimer();
+                                clicktimer.Start();
+                            }
+                            
+                            if (clicktimer.GetDuration() > 0.3 && (player.State == CharacterState.Idle || player.State == CharacterState.Moving))
                             {
                                 int result = CurrentScene.SelectCharacter();
                                 if (result == 0)
@@ -494,10 +515,16 @@ namespace demo
                                         player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Target);
                                         player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
                                         player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                                        
+                                        if (ClientID != 0)
+                                        {
+                                            player.StartMoveSyncTimer();
+                                            SendRequestMovementMsg(player);
+                                        }
                                     }
                                     else
                                     {
+                                        if (ClientID != 0)
+                                            SendTargetChangedMsg(player);
                                         //player.AddActionSetPre("Moving", CharacterState.Moving, -1, CharacterActionSetChangeFactor.ArriveTarget);
                                         //player.AddActionSet("Landing", CharacterState.Landing, -1, CharacterActionSetChangeFactor.AnimationCompleted);
                                         //player.AddActionSet("Idle", CharacterState.Idle, -1, CharacterActionSetChangeFactor.AnimationCompleted);

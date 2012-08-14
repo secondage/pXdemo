@@ -14,6 +14,7 @@ using Microsoft.Xna.Framework.Media;
 using System.Xml;
 using System.Diagnostics;
 using demo.uicontrols;
+using System.Threading;
 
 namespace demo
 {
@@ -45,7 +46,7 @@ namespace demo
 
         private List<RenderChunk> renderchunks = new List<RenderChunk>();
         private List<RenderChunk> renderchunksdefer = new List<RenderChunk>();
-        private List<Player> netplayers = new List<Player>();
+        private List<NetPlayer> netplayers = new List<NetPlayer>();
         private List<Character> characters = new List<Character>();
         private List<Character> charactersdefer = new List<Character>();
         private List<Character> battlecharacters = new List<Character>();
@@ -55,7 +56,10 @@ namespace demo
         private bool battlefini = false;
 
         private Vector2 wind = new Vector2(1, 0);
-        private Player player;
+        private Player localplayer;
+        private System.Object lockThis = new System.Object();
+
+        private Background fadebg;
 
         public Scene(string _name, int x, int y, int w, int h)
         {
@@ -91,12 +95,12 @@ namespace demo
         {
             get
             {
-                return player;
+                return localplayer;
             }
             set
             {
-                player = value;
-                player.OnActionCompleted += new EventHandler(Player_OnActionCompleted);
+                localplayer = value;
+                localplayer.OnActionCompleted += new EventHandler(Player_OnActionCompleted);
             }
         }
 
@@ -158,13 +162,16 @@ namespace demo
 
         public void Render(SpriteBatch sb)
         {
-            foreach (RenderChunk rc in renderchunks)
+            lock (lockThis)
             {
-             //   if (rc is Background || rc is Cloud)
-               //     continue;
-                //if (rc is PreRenderEffect)
-                 //   continue;
-                rc.Render(sb);
+                foreach (RenderChunk rc in renderchunks)
+                {
+                    //if (rc is Background || rc is Cloud)
+                    //    continue;
+                    //if (rc is PreRenderEffect)
+                    //    continue;
+                    rc.Render(sb);
+                }
             }
 
             if (state == SceneState.Battle && _roundtime >= 0)
@@ -204,7 +211,7 @@ namespace demo
         double _statetoggledur = 1.3;
 
         double _changebgtime = 0.0;
-        double _changebgdur = 1.3;
+        double _changebgdur = 1.0;
 
         int _fightseed = 500;
         public void Update(GameTime gametime)
@@ -217,23 +224,23 @@ namespace demo
                     {
                         if (ch is Npc)
                         {
-                            if (player != null)
+                            if (localplayer != null)
                             {
-                                player.AddVisibleNpc(ch as Npc);
+                                localplayer.AddVisibleNpc(ch as Npc);
                             }
                         }
                         ch.Update(gametime);
                     }
                 }
-                if (player != null)
+                if (localplayer != null)
                 {
-                    player.Update(gametime);
-                    if (player.State == CharacterState.Moving)
+                    localplayer.Update(gametime);
+                    if (localplayer.State == CharacterState.Moving)
                     {
                         int f = random.Next(_fightseed);
                         if (f == 0)
                         {
-                            if (player.Debug_GetQuest() && !player.CompletedQuests.Contains(2))
+                            if (localplayer.Debug_GetQuest() && !localplayer.CompletedQuests.Contains(2))
                                 IntoBattle();
                             _fightseed = random.Next(1000) + 500;
                         }
@@ -279,22 +286,27 @@ namespace demo
             {
                 AddRenderChunk(rc);
             }
+            if (renderchunksdefer.Count > 0)
+                SortRenderChunksByLayer();
             renderchunksdefer.Clear();
-            
+
 
             _removelist.Clear();
-            foreach (RenderChunk rc in renderchunks)
+            lock (lockThis)
             {
-                if (rc.State == RenderChunk.RenderChunkState.Delete)
+                foreach (RenderChunk rc in renderchunks)
                 {
-                    _removelist.Add(rc);
+                    if (rc.State == RenderChunk.RenderChunkState.Delete)
+                    {
+                        _removelist.Add(rc);
+                    }
+                    else
+                        rc.Update(gametime);
                 }
-                else
-                    rc.Update(gametime);
-            }
-            foreach (RenderChunk rc in _removelist)
-            {
-                renderchunks.Remove(rc);
+                foreach (RenderChunk rc in _removelist)
+                {
+                    renderchunks.Remove(rc);
+                }
             }
 
             if (state == SceneState.ToBattle || state == SceneState.ToMap)
@@ -335,12 +347,15 @@ namespace demo
         {
             renderchunksdefer.Add(rc);
         }
-        
+
 
         public void AddRenderChunk(RenderChunk rc)
         {
-            renderchunks.Add(rc);
-            rc.Scene = this;
+            lock (lockThis)
+            {
+                renderchunks.Add(rc);
+                rc.Scene = this;
+            }
         }
 
         public Character GetCharacterByName(string name)
@@ -353,28 +368,42 @@ namespace demo
             return null;
         }
 
-        public void SyncPlayer(ProjectXServer.Messages.PlayerPositionUpdate msg)
+
+        public void UpdatePlayerPosition(ProjectXServer.Messages.PlayerPositionUpdate msg)
         {
-            Player netplayer = FindNetPlayer(msg.ClientID);
-            if (netplayer != null)
+            Player _p = null;
+
+            if (msg.ClientID == localplayer.ClientID)
             {
-                netplayer.Position = new Vector2(msg.Position[0], msg.Position[1]);
+                _p = localplayer;
             }
             else
             {
-                if (player.ClientID == msg.ClientID)
-                {
-                    player.Position = new Vector2(msg.Position[0], msg.Position[1]);
-                }
+                _p = FindNetPlayer(msg.ClientID);
             }
+            if (_p != null)
+            {
+                //由于网络包会先到，所以最后会导致netplayer的target和position重合
+                //也就无法根据之间的距离差来求出最后人物停止的方向
+                //所以这里做个小的调整，根据服务器计算出的人物朝向来将人物位置稍微调整一下
+                _p.Position = new Vector2(msg.Position[0] - (float)(msg.Dir) * 0.001f, msg.Position[1]);
+
+                if (msg.State == (int)CharacterState.Correct)
+                {
+                    //_p.ClearActionSet();
+                    _p.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
+                }
+                if (_p == localplayer)
+                    _p.UpdateSceneScroll();
+            }
+
         }
 
-
-        public Player FindNetPlayer(long clientid)
+        public NetPlayer FindNetPlayer(long clientid)
         {
             if (netplayers.Count == 0)
                 return null;
-            foreach (Player p in netplayers)
+            foreach (NetPlayer p in netplayers)
             {
                 if (p.ClientID == clientid)
                     return p;
@@ -382,12 +411,12 @@ namespace demo
             return null;
         }
 
-        public void DelNetPlayer(Player ch)
+        public void DelNetPlayer(NetPlayer ch)
         {
             netplayers.Remove(ch);
         }
 
-        public void AddNetPlayer(Player ch)
+        public void AddNetPlayer(NetPlayer ch)
         {
             netplayers.Add(ch);
         }
@@ -463,9 +492,9 @@ namespace demo
                 if (rc.State != RenderChunk.RenderChunkState.Invisible)
                     rc.State = RenderChunk.RenderChunkState.FadeOut;
             }
-            player.Picture.Direction = new Vector2(1, 0);
-            player.ClearActionSet();
-            player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
+            localplayer.Picture.Direction = new Vector2(1, 0);
+            localplayer.ClearActionSet();
+            localplayer.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
 
             UIMgr.ShowLeaderDialog(false);
 
@@ -490,8 +519,8 @@ namespace demo
                     rc.State = RenderChunk.RenderChunkState.FadeOut;
             }
             UIMgr.ShowLeaderDialog(true);
-            player.CloseBattleMenu();
-            player.ClearActionSet();
+            localplayer.CloseBattleMenu();
+            localplayer.ClearActionSet();
 
         }
 
@@ -502,7 +531,7 @@ namespace demo
         {
             if (state == SceneState.Map)
             {
-                player.FaceDirMethod = Character.DirMethod.AutoDectect;
+                localplayer.FaceDirMethod = Character.DirMethod.AutoDectect;
                 foreach (RenderChunk rc in renderchunks)
                 {
                     if (rc.State != RenderChunk.RenderChunkState.Invisible)
@@ -532,15 +561,15 @@ namespace demo
                 UIElement trackd = UIMgr.GetUIControlByName("dlg_questtrck");
                 if (trackd != null)
                 {
-                    if (player.Debug_GetQuest())
+                    if (localplayer.Debug_GetQuest())
                         trackd.State = RenderChunk.RenderChunkState.FadeIn;
                 }
                 ChangeBackground(SceneState.Map);
             }
             else if (state == SceneState.Battle)
             {
-                player.FaceDirMethod = Character.DirMethod.Fixed;
-                player.FixedDir = new Vector2(1, 0);
+                localplayer.FaceDirMethod = Character.DirMethod.Fixed;
+                localplayer.FixedDir = new Vector2(1, 0);
                 foreach (RenderChunk rc in renderchunks)
                 {
                     //rc.State = RenderChunk.RenderChunkState.Show;
@@ -564,14 +593,16 @@ namespace demo
                 int numenemy = random.Next(1, 4);
                 if (GameConst.FixedEnemyNum != -1)
                     numenemy = GameConst.FixedEnemyNum;
-                if (player.CompletedQuests.Contains(2))
+                if (localplayer.CompletedQuests.Contains(2))
                     numenemy = 1;
                 int es = 1;
-                if (player.CompletedQuests.Contains(1)) // quest 1 completed
+                if (localplayer.CompletedQuests.Contains(1)) // quest 1 completed
                     es = 2;
-                if (player.CompletedQuests.Contains(2)) // quest 2 completed
+                if (localplayer.CompletedQuests.Contains(2)) // quest 2 completed
                     es = 3;
-               //es = 3;
+                //debug to boss rush
+                //es = 3;
+                //numenemy = 1;
                 for (int i = 0; i < numenemy; ++i)
                 {
                     string mtmp = "";
@@ -639,12 +670,22 @@ namespace demo
                                 case "PlayerHP":
                                     {
                                         GameConst.PlayerHP = Convert.ToInt32(node.FirstChild.Value);
-                                        
+
                                         break;
                                     }
                                 case "PlayerATK":
                                     {
                                         GameConst.PlayerAtk = Convert.ToInt32(node.FirstChild.Value);
+                                        break;
+                                    }
+                                case "BossRushMode":
+                                    {
+                                        GameConst.BossRushMode = Convert.ToInt32(node.FirstChild.Value);
+                                        break;
+                                    }
+                                case "BossRushMode1Offset":
+                                    {
+                                        GameConst.BossRushMode1Offset = Convert.ToInt32(node.FirstChild.Value);
                                         break;
                                     }
                             }
@@ -754,7 +795,7 @@ namespace demo
                 stream.Close();
                 stream.Dispose();
 
-               
+
 
                 //create task track 
                 UIDialog dialog = UIMgr.AddUIControl("UIDialog", "dlg_questtrck", 755, 174, 247, 345, -1, 99, this) as UIDialog;
@@ -785,7 +826,7 @@ namespace demo
 
         protected void OnPlayerTurnDlgClose(object sender, EventArgs e)
         {
-            player.MakeBattleMenu();
+            localplayer.MakeBattleMenu();
             _roundtime = _roundtimedur;
         }
 
@@ -813,40 +854,11 @@ namespace demo
             else
                 roundturn++;
 
-            /*if (roundturn % 2 == 1)
-            {
-                //my turn
-                //UIMgr.AddPlayerTurnDialog((int)UIMgr.UILayout.Center, (int)UIMgr.UILayout.Center, 0.5, 99, new EventHandler(OnPlayerTurnDlgClose));
-                UIElement d = UIMgr.AddUIControl("Dialog_PlayerTurn", "playerturn_dlg", (int)UILayout.Center, (int)UILayout.Center, 0, 0, 0.5, 99, this);
-                d.OnClose += new EventHandler(OnPlayerTurnDlgClose);
-                turn = Turn.Player;
-                player.OperateTarget = null;
-                player.Operate = Character.OperateType.None;
-            }
-            else
-            {
-                //UIMgr.AddEnemyTurnDialog((int)UIMgr.UILayout.Center, (int)UIMgr.UILayout.Center, 0.5, 99, new EventHandler(OnEnemyTurnDlgClose));
-                UIElement d = UIMgr.AddUIControl("Dialog_EnemyTurn", "enemyturn_dlg", (int)UILayout.Center, (int)UILayout.Center, 0, 0, 0.5, 99, this);
-                d.OnClose += new EventHandler(OnEnemyTurnDlgClose);
-                foreach (Character ch in battlecharacters)
-                {
-                    if (ch.TemplateID == 3)
-                    {
-                        if (ch.HP <= ch.MaxHP / 2)
-                        {
-                            if (!_battlebackgroundchanged)
-                                ChangeBackground(SceneState.Battle);
-                        }
-                    }
-                }
-                turn = Turn.Enemy;
-            }
-            */
             UIElement d = UIMgr.AddUIControl("Dialog_PlayerTurn", "playerturn_dlg", (int)UILayout.Center, (int)UILayout.Center, 0, 0, 0.5, 99, this);
             d.OnClose += new EventHandler(OnPlayerTurnDlgClose);
             turn = Turn.Player;
-            player.OperateTarget = null;
-            player.Operate = Character.OperateType.None;
+            localplayer.OperateTarget = null;
+            localplayer.Operate = Character.OperateType.None;
             foreach (Character ch in battlecharacters)
             {
                 if (ch.TemplateID == 3)
@@ -869,7 +881,7 @@ namespace demo
         {
             if (_roundtime > 0.0)
             {
-                if (player.Operate != Character.OperateType.None && player.OperateTarget != null)
+                if (localplayer.Operate != Character.OperateType.None && localplayer.OperateTarget != null)
                 {
                     _roundtime = -1.0;
                     BattleRound(0);
@@ -880,9 +892,9 @@ namespace demo
                     if (_roundtime < 0.0)
                     {
                         //player.AttackTarget = battlecharacters[random.Next(battlecharacters.Count)];
-                        player.OperateTarget = battlecharacters[random.Next(battlecharacters.Count)];
-                        player.Operate = Character.OperateType.Attack;
-                        player.CloseBattleMenu();
+                        localplayer.OperateTarget = battlecharacters[random.Next(battlecharacters.Count)];
+                        localplayer.Operate = Character.OperateType.Attack;
+                        localplayer.CloseBattleMenu();
                         BattleRound(0);
                     }
                 }
@@ -890,7 +902,7 @@ namespace demo
         }
 
 
-        
+
 
         List<ActionOrder> actionlist = new List<ActionOrder>();
         double _nextactiontime = -1.0;
@@ -907,18 +919,18 @@ namespace demo
                 }
                 if (actionlist[0].character is Player)
                 {
-                    if (player.Operate == Character.OperateType.Attack)
+                    if (localplayer.Operate == Character.OperateType.Attack)
                     {
-                        player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                        player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, player.OperateTarget);
-                        player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                        player.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                        player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                        player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Position);
-                        player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                        player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        localplayer.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        localplayer.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, localplayer.OperateTarget);
+                        localplayer.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        localplayer.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        localplayer.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        localplayer.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, localplayer.Position);
+                        localplayer.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        localplayer.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
                     }
-                    else if (player.Operate == Character.OperateType.Magic)
+                    else if (localplayer.Operate == Character.OperateType.Magic)
                     {
                         Spell fireball = Character.CreateCharacter("fireball", this) as Spell;
                         if (fireball != null)
@@ -928,12 +940,12 @@ namespace demo
                             fireball.FixedDir = new Vector2(1, 0);
                             fireball.Picture.Direction = fireball.FixedDir;
 
-                            fireball.Position = player.Position + new Vector2(100, 0);
+                            fireball.Position = localplayer.Position + new Vector2(100, 0);
                             fireball.OnActionCompleted += new EventHandler(Spell_OnActionCompleted);
                             AddSpell(fireball);
 
                             fireball.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                            fireball.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, player.OperateTarget);
+                            fireball.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, localplayer.OperateTarget);
                             fireball.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
                             fireball.AddActionSet("Idle", CharacterState.Dead, CharacterActionSetChangeFactor.AnimationCompleted, null);
                         }
@@ -943,7 +955,7 @@ namespace demo
                 {
                     Monster monster = actionlist[0].character as Monster;
                     monster.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                    monster.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, player);
+                    monster.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, localplayer);
                     monster.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
                     monster.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
                     monster.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
@@ -955,19 +967,19 @@ namespace demo
                 actionlist[0].character.Order = null;
                 actionlist.RemoveAt(0);
 
-                
+
             }
         }
 
-       
+
         public void BattleRound(int turn)
         {
             //generate actionlist
             actionlist.Clear();
             actionlist.Add(new ActionOrder(null, 100));
-            player.Order = new ActionOrder(player, random.Next(10, 20));
-            actionlist.Add(player.Order);
-            foreach(Monster m in battlecharacters)
+            localplayer.Order = new ActionOrder(localplayer, random.Next(10, 20));
+            actionlist.Add(localplayer.Order);
+            foreach (Monster m in battlecharacters)
             {
                 m.Order = new ActionOrder(m, random.Next(10, 20));
                 actionlist.Add(m.Order);
@@ -981,7 +993,7 @@ namespace demo
                 //posb = player.Position;
                 //player.State = CharacterState.Launch;
                 //player.OnActionCompleted += new EventHandler(Player_OnActionCompleted);
-                
+
 
             }
             else if (turn == 1)
@@ -992,7 +1004,7 @@ namespace demo
                     //mposb = monster.Position;
                     //monster.AttackTarget = player;
                     //monster.State = CharacterState.Launch;
-                   
+
                 }
                 //monster.OnActionCompleted += new EventHandler(Monster_OnActionCompleted);
             }
@@ -1015,7 +1027,7 @@ namespace demo
                 GoNextActionRound();
                 return;
             }
-           
+
         }
 
 
@@ -1035,7 +1047,7 @@ namespace demo
                 actionlist.Remove(monster.Order);
                 if (monster.TemplateID == 3)
                 {
-                    Npc npc = player.Scene.GetCharacterByName("boss") as Npc;
+                    Npc npc = localplayer.Scene.GetCharacterByName("boss") as Npc;
                     if (npc != null)
                     {
                         npc.Picture.State = RenderChunk.RenderChunkState.Invisible;
@@ -1080,13 +1092,13 @@ namespace demo
 
         protected void Player_OnActionCompleted(object sender, EventArgs e)
         {
-            if (player.InteractiveTarget != null)
+            if (localplayer.InteractiveTarget != null)
             {
-                player.InteractiveToNpc(player.InteractiveTarget as Npc);
+                localplayer.InteractiveToNpc(localplayer.InteractiveTarget as Npc);
             }
             else
             {
-                if (player.State == CharacterState.Dead)
+                if (localplayer.State == CharacterState.Dead)
                 {
                     ReturnMap();
                     return;
@@ -1134,22 +1146,94 @@ namespace demo
 
         protected void Player_OnArrived(object sender, EventArgs e)
         {
-            if (player.InteractiveTarget != null)
+            if (localplayer.InteractiveTarget != null)
             {
-                player.InteractiveToNpc(player.InteractiveTarget as Npc);
+                localplayer.InteractiveToNpc(localplayer.InteractiveTarget as Npc);
             }
         }
 
         bool _battlebackgroundchanged = false;
         private void CompChangeBackground()
         {
-            foreach (Background bg in battlebackgrundlist)
+            if (GameConst.BossRushMode == 0)
             {
-                bg.State = RenderChunk.RenderChunkState.FadeIn;
-                renderchunks.Add(bg);
+                foreach (Background bg in battlebackgrundlist)
+                {
+                    bg.State = RenderChunk.RenderChunkState.FadeIn;
+                    renderchunks.Add(bg);
+                }
+                _battlebackgroundchanged = true;
+                SortRenderChunksByLayer();
             }
-            _battlebackgroundchanged = true;
-            SortRenderChunksByLayer();
+            else if (GameConst.BossRushMode == 1)
+            {
+                fadebg.State = RenderChunk.RenderChunkState.FadeOutToDel;
+                foreach (Background bg in battlebackgrundlist)
+                {
+                    bg.State = RenderChunk.RenderChunkState.FadeIn;
+                    renderchunks.Add(bg);
+                }
+                SortRenderChunksByLayer();
+                foreach (RenderChunk rc in renderchunks)
+                {
+                    if (rc is Cloud)
+                    {
+                        //rc.State = RenderChunk.RenderChunkState.FadeOut;
+                        rc.Position = new Vector2((float)random.NextDouble() * (float)GameConst.ScreenWidth * 0.8f,
+                                                    (float)random.NextDouble() * (float)GameConst.ScreenHeight)
+                                                    + new Vector2(viewport.X, viewport.Y);
+
+                    }
+                }
+                localplayer.Position = new Vector2(localplayer.Position.X, localplayer.Position.Y - GameConst.BossRushMode1Offset);
+                
+                foreach (Character ch in battlecharacters)
+                {
+                    if (ch.TemplateID == 3)
+                    {
+                        ch.Position = new Vector2(ch.Position.X, ch.Position.Y + GameConst.BossRushMode1Offset);
+                      
+                    }
+                }
+                this.wind = new Vector2(0, -10);
+                _battlebackgroundchanged = true;
+            }
+            else if (GameConst.BossRushMode == 2)
+            {
+                fadebg.State = RenderChunk.RenderChunkState.FadeOutToDel;
+                foreach (Background bg in battlebackgrundlist)
+                {
+                    bg.State = RenderChunk.RenderChunkState.FadeIn;
+                    renderchunks.Add(bg);
+                }
+                SortRenderChunksByLayer();
+                foreach (RenderChunk rc in renderchunks)
+                {
+                    if (rc is Cloud)
+                    {
+                        //rc.State = RenderChunk.RenderChunkState.FadeOut;
+                        rc.Position = new Vector2((float)random.NextDouble() * (float)GameConst.ScreenWidth * 0.8f,
+                                                    (float)random.NextDouble() * (float)GameConst.ScreenHeight)
+                                                    + new Vector2(viewport.X, viewport.Y);
+
+                    }
+                }
+                localplayer.Position = new Vector2(localplayer.Position.X, localplayer.Picture.FrameSize.Y + viewport.Y);
+
+                foreach (Character ch in battlecharacters)
+                {
+                    if (ch.TemplateID == 3)
+                    {
+                        ch.Position = new Vector2(ch.Position.X, GameConst.ScreenHeight - ch.Picture.FrameSize.Y * 0.5f + viewport.Y);
+                        ch.Picture.Angle = MathHelper.ToRadians(30.0f);
+                        ch.Picture.OriginAngle = MathHelper.ToRadians(30.0f);
+                    }
+                }
+                this.wind = new Vector2(-8, -8);
+                _battlebackgroundchanged = true;
+                localplayer.Picture.Angle = MathHelper.ToRadians(30.0f);
+                localplayer.Picture.OriginAngle = MathHelper.ToRadians(30.0f);
+            }
         }
 
 
@@ -1157,40 +1241,155 @@ namespace demo
         {
             if (state == SceneState.Map)
             {
-                foreach (Background bg in battlebackgrundlist)
+                if (GameConst.BossRushMode == 0)
                 {
-                    bg.State = RenderChunk.RenderChunkState.FadeOut;
-                    renderchunks.Remove(bg);
-                }
-                foreach (Background bg in mapbackgrundlist)
-                {
-                    bg.State = RenderChunk.RenderChunkState.FadeIn;
-                }
-                foreach (RenderChunk rc in renderchunks)
-                {
-                    if (rc is Cloud)
+                    foreach (Background bg in battlebackgrundlist)
                     {
-                        rc.State = RenderChunk.RenderChunkState.FadeIn;
+                        bg.State = RenderChunk.RenderChunkState.FadeOut;
+                        renderchunks.Remove(bg);
                     }
+                    foreach (Background bg in mapbackgrundlist)
+                    {
+                        bg.State = RenderChunk.RenderChunkState.FadeIn;
+                    }
+                    foreach (RenderChunk rc in renderchunks)
+                    {
+                        if (rc is Cloud)
+                        {
+                            rc.State = RenderChunk.RenderChunkState.FadeIn;
+                        }
+                    }
+                    _battlebackgroundchanged = false;
+
                 }
-                _battlebackgroundchanged = false;
+                else if (GameConst.BossRushMode == 1)
+                {
+                    foreach (Background bg in battlebackgrundlist)
+                    {
+                        bg.State = RenderChunk.RenderChunkState.FadeOut;
+                        renderchunks.Remove(bg);
+                    }
+                    foreach (Background bg in mapbackgrundlist)
+                    {
+                        bg.State = RenderChunk.RenderChunkState.FadeIn;
+                    }
+                    foreach (RenderChunk rc in renderchunks)
+                    {
+                        if (rc is Cloud)
+                        {
+                            rc.State = RenderChunk.RenderChunkState.FadeIn;
+                        }
+                    }
+                    foreach (RenderChunk rc in renderchunks)
+                    {
+                        if (rc is Cloud)
+                        {
+                            //generate position
+                            rc.Position = new Vector2((float)random.NextDouble() * actualSize.Z, (float)random.NextDouble() * actualSize.W * 0.9f);
+                        }
+                    }
+                    this.wind = new Vector2(1, 0);
+                    _battlebackgroundchanged = false;
+                }
+                else if (GameConst.BossRushMode == 2)
+                {
+                    foreach (Background bg in battlebackgrundlist)
+                    {
+                        bg.State = RenderChunk.RenderChunkState.FadeOut;
+                        renderchunks.Remove(bg);
+                    }
+                    foreach (Background bg in mapbackgrundlist)
+                    {
+                        bg.State = RenderChunk.RenderChunkState.FadeIn;
+                    }
+                    foreach (RenderChunk rc in renderchunks)
+                    {
+                        if (rc is Cloud)
+                        {
+                            rc.State = RenderChunk.RenderChunkState.FadeIn;
+                        }
+                    }
+                   foreach (RenderChunk rc in renderchunks)
+                    {
+                        if (rc is Cloud)
+                        {
+                            //generate position
+                            rc.Position = new Vector2((float)random.NextDouble() * actualSize.Z, (float)random.NextDouble() * actualSize.W * 0.9f);
+                        }
+                    }
+                    this.wind = new Vector2(1, 0);
+                    _battlebackgroundchanged = false;
+                    localplayer.Picture.Angle = 0.0f;
+                    localplayer.Picture.OriginAngle = 0.0f;
+                }
+
             }
             else
             {
-                foreach (Background bg in mapbackgrundlist)
+                if (GameConst.BossRushMode == 0)
                 {
-                    bg.State = RenderChunk.RenderChunkState.FadeOut;
-                    _changebgtime = _changebgdur;
-                }
-
-                foreach (RenderChunk rc in renderchunks)
-                {
-                    if (rc is Cloud)
+                    foreach (Background bg in mapbackgrundlist)
                     {
-                        rc.State = RenderChunk.RenderChunkState.FadeOut;
+                        bg.State = RenderChunk.RenderChunkState.FadeOut;
+                        
+                    }
+                    _changebgtime = _changebgdur;
+                    foreach (RenderChunk rc in renderchunks)
+                    {
+                        if (rc is Cloud)
+                        {
+                            rc.State = RenderChunk.RenderChunkState.FadeOut;
+                        }
                     }
                 }
+                else if (GameConst.BossRushMode == 1)
+                {
+                    foreach (Background bg in mapbackgrundlist)
+                    {
+                        bg.State = RenderChunk.RenderChunkState.FadeOut;
+                        
+                    }
 
+                    _changebgtime = _changebgdur;
+                    fadebg.State = RenderChunk.RenderChunkState.FadeIn;
+                    AddRenderChunk(fadebg);
+                    SortRenderChunksByLayer();
+                    //localplayer.PushPosition();
+                   
+
+                }
+                else if (GameConst.BossRushMode == 2)
+                {
+                    foreach (Background bg in mapbackgrundlist)
+                    {
+                        bg.State = RenderChunk.RenderChunkState.FadeOut;
+                       
+                    }
+
+                    _changebgtime = _changebgdur;
+                    /*foreach (RenderChunk rc in renderchunks)
+                    {
+                        if (rc is Cloud)
+                        {
+                            rc.State = RenderChunk.RenderChunkState.FadeOut;
+                        }
+                    }*/
+                    //localplayer.PushPosition();
+                    fadebg.State = RenderChunk.RenderChunkState.FadeIn;
+                    AddRenderChunk(fadebg);
+                    SortRenderChunksByLayer();
+                    /*localplayer.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, new Vector2(localplayer.Position.X, localplayer.Picture.FrameSize.Y * 0.5f + viewport.Y));
+                    localplayer.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                    foreach (Character ch in battlecharacters)
+                    {
+                        if (ch.TemplateID == 3)
+                        {
+                            ch.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, new Vector2(ch.Position.X, GameConst.ScreenHeight - ch.Picture.FrameSize.Y * 0.5f + viewport.Y));
+                            ch.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        }
+                    }*/
+
+                }
             }
 
         }
@@ -1221,80 +1420,44 @@ namespace demo
             AddRenderChunk(bg);
             mapbackgrundlist.Add(bg);
 
+            Texture2D fadetexture = GameConst.Content.Load<Texture2D>(@"effect/fade");
+            fadebg = new Background(fadetexture, 9999);
+            fadebg.Size = new Vector2(GameConst.ScreenWidth / fadetexture.Width, GameConst.ScreenHeight / fadetexture.Height);
+            //fadebg.State = RenderChunk.RenderChunkState.Hide;
+            //AddRenderChunk(fadebg);
 
-            Texture2D btexbg0 = GameConst.Content.Load<Texture2D>(@"background/bg_boss");
-            Texture2D btexbg1 = GameConst.Content.Load<Texture2D>(@"background/bg_boss_loop1");
-            Background bbg = new Background(btexbg0, 0);
-            bbg.Size = Vector2.One;
-            bbg.CoordinateSystem = RenderChunk.CoordinateSystemType.Screen;
-            bbg.AutoScroll = true;
-            bbg.AutoScrollDirection = Background.AutoScrollDirectionType.Horizontal;
-            bbg.AutoScrollLoop = false;
-            bbg.AutoScrollSpeed = new Vector2(4, 4);
-            battlebackgrundlist.Add(bbg);
-            bbg = new Background(btexbg1, 1);
-            bbg.Size = Vector2.One;
-            bbg.CoordinateSystem = RenderChunk.CoordinateSystemType.Screen;
-            bbg.AutoScroll = true;
-            bbg.AutoScrollDirection = Background.AutoScrollDirectionType.Vertical;
-            bbg.AutoScrollLoop = true;
-            bbg.AutoScrollSpeed = new Vector2(200, 200);
-            battlebackgrundlist.Add(bbg);
 
-        }
-
-        /*
-        private void Interactive(Character from, Character to)
-        {
-            if (from is Player)
+            if (GameConst.BossRushMode == 0)
             {
-                Player player = from as Player;
-                if (to is Npc)
-                {
-                    Npc npc = to as Npc;
-                    if (npc.ExistQuest())
-                    {
-                        Quest quest = npc.GetFirstQuest();
-                        UIDialog dialog = UIMgr.AddUIControl("Dialog_Npc", "dialognpc", (int)UILayout.Center, (int)UILayout.Bottom, 0, 0, -1, 99, this) as UIDialog;
-                        if (dialog != null)
-                        {
-                            UITextBlock text = UIMgr.CreateUIControl("UITextBlock") as UITextBlock;
-                            if (text != null)
-                            {
-                                text.Text = quest.Talk;
-                                text.FontColor = Color.Black;
-                                dialog.AddUIControl(text, "npctalk", 18, 47, 441, 138, -1, this);
-                            }
-                            UITextButton btn = UIMgr.CreateUIControl("UITextButton") as UITextButton;
-                            if (btn != null)
-                            {
-                                btn.Text = "你你你你你你你你你444444";
-                                btn.UserData = quest;
-                                btn.FontColor = Color.DeepSkyBlue;
-                                dialog.AddUIControl(btn, "okbtn", 20, 200, 300, 20, -1, this);
-                            }
-                            UITextButton btn1 = UIMgr.CreateUIControl("UITextButton") as UITextButton;
-                            if (btn1 != null)
-                            {
-                                btn1.Text = "你你你你你你你你你444444";
-                                btn.FontColor = Color.DeepSkyBlue;
-                                dialog.AddUIControl(btn1, "cancelbtn", 20, 221, 300, 20, -1, this);
-                            }
-                            UIImage npcface1 = UIMgr.CreateUIControl("UIImage") as UIImage;
-                            if (npcface1 != null)
-                            {
-                                npcface1.Texture = GameConst.Content.Load<Texture2D>(@"npcface/NPC01");
-                                dialog.AddUIControl(npcface1, "testimage", 0, -npcface1.Texture.Height, 0, 0, -1, this);
-                            }
-                        }
-                       
-                    }
-                }
+                Texture2D btexbg0 = GameConst.Content.Load<Texture2D>(@"background/bg_boss");
+                Texture2D btexbg1 = GameConst.Content.Load<Texture2D>(@"background/bg_boss_loop1");
+                Background bbg = new Background(btexbg0, 0);
+                bbg.Size = Vector2.One;
+                bbg.CoordinateSystem = RenderChunk.CoordinateSystemType.Screen;
+                bbg.AutoScroll = true;
+                bbg.AutoScrollDirection = Background.AutoScrollDirectionType.Horizontal;
+                bbg.AutoScrollLoop = false;
+                bbg.AutoScrollSpeed = new Vector2(4, 4);
+                battlebackgrundlist.Add(bbg);
+                bbg = new Background(btexbg1, 1);
+                bbg.Size = Vector2.One;
+                bbg.CoordinateSystem = RenderChunk.CoordinateSystemType.Screen;
+                bbg.AutoScroll = true;
+                bbg.AutoScrollDirection = Background.AutoScrollDirectionType.Vertical;
+                bbg.AutoScrollLoop = true;
+                bbg.AutoScrollSpeed = new Vector2(200, 200);
+                battlebackgrundlist.Add(bbg);
+            }
+            else
+            {
+                Texture2D btexbg0 = GameConst.Content.Load<Texture2D>(@"background/bg_boss_2");
+                Background bbg = new Background(btexbg0, 0);
+                bbg.Size = Vector2.One;
+                bbg.CoordinateSystem = RenderChunk.CoordinateSystemType.Screen;
+                bbg.AutoScroll = false;
+                battlebackgrundlist.Add(bbg);
             }
         }
-        */
-
-
 
         public int SelectCharacter()
         {
@@ -1306,12 +1469,14 @@ namespace demo
                         player.State = CharacterState.Launch;
                     player.InteractiveTarget = _hostCharacter;
                     player.OnArrived += new EventHandler(Player_OnArrived);*/
-                    player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                    player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveInteractiveTarget, _hostCharacter);
-                    player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                    player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                    
-                   
+                    if (_hostCharacter != localplayer.InteractiveTarget)
+                    {
+                        localplayer.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        localplayer.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveInteractiveTarget, _hostCharacter);
+                        localplayer.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        localplayer.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                        localplayer.InteractiveTarget = _hostCharacter;
+                    }
                     return 1;
                 }
             }
@@ -1323,23 +1488,13 @@ namespace demo
         {
             if (_hostCharacter != null && _roundtime > 0)
             {
-                //player.AttackTarget = _hostCharacter;
-                /*player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, _hostCharacter);
-                player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                player.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Position);
-                player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);*/
-
                 //若直接选中monster，为直接攻击
-                if (player.Operate == Character.OperateType.None)
-                    player.Operate = Character.OperateType.Attack;
-                player.OperateTarget = _hostCharacter;
+                if (localplayer.Operate == Character.OperateType.None)
+                    localplayer.Operate = Character.OperateType.Attack;
+                localplayer.OperateTarget = _hostCharacter;
                 _hostCharacter.Picture.HighLight = false;
                 _hostCharacter = null;
-                player.CloseBattleMenu();
+                localplayer.CloseBattleMenu();
             }
         }
 
@@ -1404,11 +1559,11 @@ namespace demo
                 }
                 else if (host is Monster)
                 {
-                    if (player.Operate == Character.OperateType.Attack || player.Operate == Character.OperateType.None)
+                    if (localplayer.Operate == Character.OperateType.Attack || localplayer.Operate == Character.OperateType.None)
                     {
                         GameCursor.SetCursor(GameCursor.CursorType.Attack);
                     }
-                    else if (player.Operate == Character.OperateType.Magic)
+                    else if (localplayer.Operate == Character.OperateType.Magic)
                     {
                         GameCursor.SetCursor(GameCursor.CursorType.Magic);
                     }
@@ -1445,7 +1600,7 @@ namespace demo
                 //generate texture id
                 Texture2D tex = texarray[random.Next(texarray.Length)];
                 //generate layer
-                int layer = random.Next(10, 30);
+                int layer = random.Next(15, 30);
 
                 Cloud cloud = new Cloud(tex, layer);
 
@@ -1463,10 +1618,34 @@ namespace demo
                 cloud.Position = new Vector2((float)random.NextDouble() * actualSize.Z, (float)random.NextDouble() * actualSize.W * 0.9f);
 
                 //generate speed, size is the scale factor
-                cloud.Speed = new Vector2((float)random.NextDouble() * (30000000.0f / (cloud.ActualSize.X * cloud.ActualSize.Y)), 0);
+                float sf = (float)random.NextDouble() * (30000000.0f / (cloud.ActualSize.X * cloud.ActualSize.Y));
+                cloud.Speed = new Vector2(sf, sf);
 
                 AddRenderChunk(cloud);
-           
+            }
+        }
+
+
+
+        internal void UpdatePlayerMovement(ProjectXServer.Messages.PlayerMoveRequest msg)
+        {
+            Player _p = FindNetPlayer(msg.ClientID);
+            if (_p != null)
+            {
+                _p.Target = new Vector2(msg.Target[0], msg.Target[1]);
+                _p.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                _p.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, _p.Target);
+                _p.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                _p.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
+            }
+        }
+
+        internal void UpdatePlayerTarget(ProjectXServer.Messages.PlayerTargetChanged msg)
+        {
+            Player _p = FindNetPlayer(msg.ClientID);
+            if (_p != null)
+            {
+                _p.Target = new Vector2(msg.Target[0], msg.Target[1]);
             }
         }
     }

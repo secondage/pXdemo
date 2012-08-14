@@ -36,7 +36,29 @@ namespace demo
         }
 
 
-        
+        public float Angle
+        {
+            get
+            {
+                return angle;
+            }
+            set
+            {
+                angle = value;
+            }
+        }
+
+        public float OriginAngle
+        {
+            get
+            {
+                return originangle;
+            }
+            set
+            {
+                originangle = value;
+            }
+        }
 
         public CharacterAnimation CurrentAnimation
         {
@@ -195,7 +217,7 @@ namespace demo
             Texture2D tex = GameConst.Content.Load<Texture2D>(@"character/" + pd.texture);
             framesize.X = pd.width;
             framesize.Y = pd.height;
-
+            Size = new Vector2(pd.size, pd.size);
             foreach (CharacterDefinition.AnimDef ad in pd.anims)
             {
                 CharacterAnimation cani = new CharacterAnimation(ad.name);
@@ -232,7 +254,14 @@ namespace demo
                 return;*/
 
 
-            sb.Draw(animTextures[currentAnim.Name], pos, currentAnim.CurrentRect, highlight ? Color.Red : this.Color, angle, currentAnim.CurrentOrigin, Size, dir.X < 0 ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0.0f);
+            sb.Draw(animTextures[currentAnim.Name], 
+                pos, 
+                currentAnim.CurrentRect, 
+                highlight ? Color.Red : this.Color, 
+                angle, currentAnim.CurrentOrigin, 
+                Size, 
+                dir.X < 0 ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 
+                0.0f);
 
             if (child != null)
             {
@@ -263,7 +292,7 @@ namespace demo
             UpdateRotating(gametime);
 
             if (hover)
-                position.Y += (float)Math.Sin(gametime.TotalGameTime.TotalSeconds * _flytime) * 0.2f;
+                position.Y += (float)Math.Sin(gametime.TotalGameTime.TotalSeconds * _flytime) * 0.3f;
 
             base.Update(gametime);
         }

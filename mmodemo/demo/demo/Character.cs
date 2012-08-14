@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using System.Diagnostics;
 
 namespace demo
 {
@@ -27,6 +28,7 @@ namespace demo
         Return,
         Dead,
         Dying,  //垂死
+        Correct,
     };
     public enum CharacterActionSetChangeFactor
     {
@@ -464,10 +466,10 @@ namespace demo
                             {
                                 OnActionCompleted(this, new EventArgs());
                             }*/
-                            if (ClientID != 0)
+                            if (ClientID != 0 & this.GetType() == typeof(demo.Player))
                             {
-                                StartMoveSyncTimer();
-                                MainGame.SendRequestMovementMsg(this);
+                                //StartMoveSyncTimer();
+                                //MainGame.SendRequestMovementMsg(this);
                             }
                             break;
                         }
@@ -772,6 +774,13 @@ namespace demo
         {
             if (actionsets.Count > 0)
             {
+                if (this.GetType() == typeof(demo.Player) && ClientID != 0 && scene.State == demo.Scene.SceneState.Map)
+                {
+                    if (actionsets[0].factor == CharacterActionSetChangeFactor.ArriveTarget)
+                    {
+                        MainGame.SendMoveFinishMsg(this);
+                    }
+                }
                 actionsets.RemoveAt(0);
                 if (actionsets.Count == 0 && currentactionset != null)
                 {

@@ -29,6 +29,18 @@ namespace demo
             {
                 position.X = -ActualSize.X - 10.0f;
             }
+            if (position.Y > scene.ActualSize.W)
+            {
+                position.Y = -ActualSize.Y - 10.0f;
+            }
+            if (position.X < -texture.Width * Size.X - 10.0f)
+            {
+                position.X = scene.ActualSize.Z + 10.0f;
+            }
+            if (position.Y < -texture.Height * Size.Y - 10.0f)
+            {
+                position.Y = scene.ActualSize.W + 10.0f;
+            }
             base.Update(gametime);
         }
 
@@ -43,12 +55,12 @@ namespace demo
             pos.X -= Scene.Viewport.X;
             pos.Y -= Scene.Viewport.Y;
 
-            Rectangle n = new Rectangle((int)Position.X, (int)Position.Y, (int)(texture.Width * size.X), (int)(texture.Height * size.Y));
+            Rectangle n = new Rectangle((int)Position.X, (int)Position.Y, (int)(texture.Width * Size.X), (int)(texture.Height * Size.Y));
             Rectangle p = new Rectangle((int)scene.Viewport.X, (int)scene.Viewport.Y, (int)scene.Viewport.Z, (int)scene.Viewport.W);
             if (!n.Intersects(p))
                 return;
 
-            sb.Draw(texture, pos, null, this.Color, 0.0f, Vector2.Zero, size, se, 0.0f);
+            sb.Draw(texture, pos, null, this.Color, 0.0f, Vector2.Zero, Size, se, 0.0f);
 
             base.Render(sb);
         }

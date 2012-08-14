@@ -38,6 +38,7 @@
             // 
             // textUserName
             // 
+            this.textUserName.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.textUserName.Location = new System.Drawing.Point(134, 141);
             this.textUserName.Name = "textUserName";
             this.textUserName.Size = new System.Drawing.Size(136, 21);
@@ -45,6 +46,7 @@
             // 
             // textPassword
             // 
+            this.textPassword.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.textPassword.Location = new System.Drawing.Point(134, 178);
             this.textPassword.Name = "textPassword";
             this.textPassword.PasswordChar = '*';
@@ -53,6 +55,7 @@
             // 
             // btnLogin
             // 
+            this.btnLogin.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.btnLogin.Location = new System.Drawing.Point(165, 221);
             this.btnLogin.Name = "btnLogin";
             this.btnLogin.Size = new System.Drawing.Size(75, 23);
@@ -70,17 +73,18 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(192)))), ((int)(((byte)(128)))));
-            this.ClientSize = new System.Drawing.Size(394, 239);
+            this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.ClientSize = new System.Drawing.Size(404, 275);
             this.Controls.Add(this.btnLogin);
             this.Controls.Add(this.textPassword);
             this.Controls.Add(this.textUserName);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(404, 275);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(404, 275);
             this.Name = "LoginDialog";
+            this.Opacity = 0.88D;
             this.ShowIcon = false;
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.LoginDialog_FormClosing);
             this.ResumeLayout(false);

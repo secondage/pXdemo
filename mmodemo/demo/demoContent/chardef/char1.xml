@@ -4,6 +4,7 @@
     <width>150</width>
     <height>150</height>
     <texture>char1</texture>
+    <size>1.0</size>
     <anims>
       <Item>
         <name>Idle</name>

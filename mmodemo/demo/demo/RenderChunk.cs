@@ -40,7 +40,7 @@ namespace demo
         protected int layer = 0;
         protected Texture2D texture;
         protected Vector2 position = new Vector2();
-        protected Vector2 size = new Vector2(1, 1);
+        private Vector2 size = new Vector2(1, 1);
         protected Vector2 speed = new Vector2();
         protected Scene scene;
         protected Color color = Color.White;
@@ -102,7 +102,7 @@ namespace demo
             }
             set
             {
-                size = value;
+                size = value * GameConst.ForegroundScale;
             }
         }
 

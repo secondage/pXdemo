@@ -206,6 +206,7 @@ namespace demo
                 {
                     pic.Direction = fixedfacedir;
                 }
+            
 
                 SendOnArrived(this);
                 
@@ -216,7 +217,8 @@ namespace demo
                 position += ((float)gametime.ElapsedGameTime.TotalSeconds * speed) * dir;
                 pic.Position = position;// - pic.FrameSize * 0.5f;
             }
-            UpdateSceneScroll();
+            if (this.GetType() == typeof(demo.Player))
+                 UpdateSceneScroll();
             base.UpdateMovement(gametime);
         }
 
@@ -234,7 +236,7 @@ namespace demo
             UIDialog dialog = UIMgr.GetUIControlByName("playerbattlemenu") as UIDialog;
             if (dialog == null)
             {
-                dialog = UIMgr.AddUIControl("UIDialog", "playerbattlemenu", (int)150, (int)GameConst.ScreenHeight / 2 - 90, 70, 100, -1, 99, this) as UIDialog;
+                dialog = UIMgr.AddUIControl("UIDialog", "playerbattlemenu", (int)150, (int)(Position.Y - scene.Viewport.Y)/*(int)GameConst.ScreenHeight / 2 - 90*/, 70, 100, -1, 99, this) as UIDialog;
             }
             if (dialog != null)
             {
