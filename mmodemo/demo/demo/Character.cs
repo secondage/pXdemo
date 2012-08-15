@@ -661,8 +661,14 @@ namespace demo
         {
             try
             {
-                float dhp = offense.ATK * 1.5f - def * 1.3f;
+                float dhp = MathHelper.Max(offense.ATK * 1.5f - def * 1.3f, 0);
                 hp -= (int)dhp;
+                //play number animation
+                effects.NumberAnimation na = new effects.NumberAnimation((int)dhp);
+                na.Position = new Vector2(this.Position.X, this.Position.Y - this.Picture.FrameSize.Y * 0.5f);
+                na.Color = new Color(1.0f, 0.0f, 0.0f);
+                na.Play(Scene);
+
                 ClearActionSet();
                 AddActionSet("BeAttack", CharacterState.BeAttack, CharacterActionSetChangeFactor.AnimationCompleted, null);
                 if (hp <= 0)

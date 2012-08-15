@@ -114,6 +114,7 @@
     <Compile Include="CharacterPic.cs" />
     <Compile Include="CharacterTitle.cs" />
     <Compile Include="Cloud.cs" />
+    <Compile Include="effects\NumberAnimation.cs" />
     <Compile Include="GameConst.cs" />
     <Compile Include="GameCursor.cs" />
     <Compile Include="Log.cs" />

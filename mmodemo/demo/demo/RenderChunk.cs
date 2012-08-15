@@ -38,7 +38,7 @@ namespace demo
         
 
         protected int layer = 0;
-        protected Texture2D texture;
+        protected Texture2D texture = null;
         protected Vector2 position = new Vector2();
         private Vector2 size = new Vector2(1, 1);
         protected Vector2 speed = new Vector2();
@@ -51,6 +51,10 @@ namespace demo
 
         private float stateAniCurTime = -1.0f;
         private float stateAniDuration = 1.0f;
+
+        public RenderChunk()
+        {
+        }
 
         public RenderChunk(Texture2D intexture, int inlayer)
         {

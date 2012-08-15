@@ -429,7 +429,11 @@ namespace demo
             }
             if (ks.IsKeyUp(Microsoft.Xna.Framework.Input.Keys.D) && _ksLast.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.D))
             {
-                CurrentScene.ReturnMap();
+                //CurrentScene.ReturnMap();
+                effects.NumberAnimation na = new effects.NumberAnimation(1789);
+                na.Position = new Vector2(200, 200);
+                na.Play(CurrentScene);
+                
             }
 
             /* if (ks.IsKeyUp(Keys.S))

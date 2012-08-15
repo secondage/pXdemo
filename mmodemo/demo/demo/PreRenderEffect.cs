@@ -90,6 +90,13 @@ namespace demo
             Render(sb);
         }
 
+        public int Frame
+        {
+            set
+            {
+                animation.CurrentFrame = value;
+            }
+        }
 
         public void Initialize(ContentManager content)
         {

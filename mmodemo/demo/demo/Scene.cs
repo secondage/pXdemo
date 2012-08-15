@@ -294,14 +294,15 @@ namespace demo
             _removelist.Clear();
             lock (lockThis)
             {
-                foreach (RenderChunk rc in renderchunks)
+                //foreach (RenderChunk rc in renderchunks)
+                for(int i = 0 ; i < renderchunks.Count ; ++i)
                 {
-                    if (rc.State == RenderChunk.RenderChunkState.Delete)
+                    if (renderchunks[i].State == RenderChunk.RenderChunkState.Delete)
                     {
-                        _removelist.Add(rc);
+                        _removelist.Add(renderchunks[i]);
                     }
                     else
-                        rc.Update(gametime);
+                        renderchunks[i].Update(gametime);
                 }
                 foreach (RenderChunk rc in _removelist)
                 {
@@ -932,22 +933,36 @@ namespace demo
                     }
                     else if (localplayer.Operate == Character.OperateType.Magic)
                     {
-                        Spell fireball = Character.CreateCharacter("fireball", this) as Spell;
-                        if (fireball != null)
+                        if (localplayer.OperateTarget != localplayer)
                         {
-                            fireball.Layer = 15;
-                            fireball.FaceDirMethod = Character.DirMethod.Fixed;
-                            fireball.FixedDir = new Vector2(1, 0);
-                            fireball.Picture.Direction = fireball.FixedDir;
+                            Spell fireball = Character.CreateCharacter("fireball", this) as Spell;
+                            if (fireball != null)
+                            {
+                                fireball.Layer = 15;
+                                fireball.FaceDirMethod = Character.DirMethod.Fixed;
+                                fireball.FixedDir = new Vector2(1, 0);
+                                fireball.Picture.Direction = fireball.FixedDir;
 
-                            fireball.Position = localplayer.Position + new Vector2(100, 0);
-                            fireball.OnActionCompleted += new EventHandler(Spell_OnActionCompleted);
-                            AddSpell(fireball);
+                                fireball.Position = localplayer.Position + new Vector2(100, 0);
+                                fireball.OnActionCompleted += new EventHandler(Spell_OnActionCompleted);
+                                AddSpell(fireball);
 
-                            fireball.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                            fireball.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, localplayer.OperateTarget);
-                            fireball.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                            fireball.AddActionSet("Idle", CharacterState.Dead, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                                fireball.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                                fireball.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, localplayer.OperateTarget);
+                                fireball.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                                fireball.AddActionSet("Idle", CharacterState.Dead, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                            }
+                        }
+                        else
+                        {
+                            localplayer.HP += 100;
+                            localplayer.HP = (int)MathHelper.Min((float)localplayer.HP, (float)localplayer.MaxHP);
+                            //play number animation
+                            effects.NumberAnimation na = new effects.NumberAnimation(100);
+                            na.Position = new Vector2(localplayer.Position.X, localplayer.Position.Y - localplayer.Picture.FrameSize.Y * 0.5f);
+                            na.Color = new Color(0.0f, 1.0f, 0.0f);
+                            na.Play(this);
+                            GoNextActionRound();
                         }
                     }
                 }
@@ -1518,7 +1533,7 @@ namespace demo
             }
             foreach (Character ch in characters)
             {
-                if (ch is Player)
+                if (ch is Player && localplayer.Operate != Character.OperateType.Magic)
                     continue;
                 if (ch.Picture.State != RenderChunk.RenderChunkState.Show)
                     continue;
@@ -1553,7 +1568,14 @@ namespace demo
                     _hostCharacter.Picture.HighLight = false;
                 host.Picture.HighLight = true;
                 _hostCharacter = host;
-                if (host is Npc)
+                if (host is Player)
+                {
+                    if (localplayer.Operate == Character.OperateType.Magic)
+                    {
+                        GameCursor.SetCursor(GameCursor.CursorType.Magic);
+                    }
+                }
+                else if (host is Npc)
                 {
                     GameCursor.SetCursor(GameCursor.CursorType.Talk);
                 }
