@@ -45,10 +45,10 @@ namespace demo
         private Random random = new Random();
 
         private List<RenderChunk> renderchunks = new List<RenderChunk>();
-        private List<RenderChunk> renderchunksdefer = new List<RenderChunk>();
+        //private List<RenderChunk> renderchunksdefer = new List<RenderChunk>();
         private List<NetPlayer> netplayers = new List<NetPlayer>();
         private List<Character> characters = new List<Character>();
-        private List<Character> charactersdefer = new List<Character>();
+        //private List<Character> charactersdefer = new List<Character>();
         private List<Character> battlecharacters = new List<Character>();
         private List<Spell> spells = new List<Spell>();
         private string name;
@@ -162,17 +162,15 @@ namespace demo
 
         public void Render(SpriteBatch sb)
         {
-            lock (lockThis)
+            for (int i = 0; i < renderchunks.Count; ++i)
             {
-                foreach (RenderChunk rc in renderchunks)
-                {
-                    //if (rc is Background || rc is Cloud)
-                    //    continue;
-                    //if (rc is PreRenderEffect)
-                    //    continue;
-                    rc.Render(sb);
-                }
+                //if (rc is Background || rc is Cloud)
+                //    continue;
+                //if (rc is PreRenderEffect)
+                //    continue;
+                renderchunks[i].Render(sb);
             }
+
 
             if (state == SceneState.Battle && _roundtime >= 0)
             {
@@ -218,18 +216,18 @@ namespace demo
         {
             if (state == SceneState.Map)
             {
-                foreach (Character ch in characters)
+                for (int i = 0; i < characters.Count; ++i)
                 {
-                    if (!(ch is Player))
+                    if (!(characters[i] is Player))
                     {
-                        if (ch is Npc)
+                        if (characters[i] is Npc)
                         {
                             if (localplayer != null)
                             {
-                                localplayer.AddVisibleNpc(ch as Npc);
+                                localplayer.AddVisibleNpc(characters[i] as Npc);
                             }
                         }
-                        ch.Update(gametime);
+                        characters[i].Update(gametime);
                     }
                 }
                 if (localplayer != null)
@@ -250,65 +248,43 @@ namespace demo
                         }
                     }
                 }
-                foreach (Player p in netplayers)
+                for (int i = 0; i < netplayers.Count; ++i)
                 {
-                    p.Update(gametime);
+                    netplayers[i].Update(gametime);
                 }
             }
             else if (state == SceneState.Battle)
             {
-                foreach (Character ch in characters)
+                for (int i = 0; i < characters.Count; ++i)
                 {
-                    if (ch is Player)
-                        ch.Update(gametime);
+                    if (characters[i] is Player)
+                        characters[i].Update(gametime);
                 }
-                foreach (Character ch in battlecharacters)
+                for (int i = 0; i < battlecharacters.Count; ++i)
                 {
-                    ch.Update(gametime);
+                    battlecharacters[i].Update(gametime);
                 }
-                foreach (Spell s in spells)
+                for (int i = 0; i < spells.Count; ++i)
                 {
-                    s.Update(gametime);
+                    spells[i].Update(gametime);
                 }
                 UpdatePlayerTurn(gametime);
                 UpdateBattleResult();
                 UpdateNextActionRound(gametime);
             }
 
-
-            foreach (Character ch in charactersdefer)
+            for (int i = 0; i < renderchunks.Count; ++i)
             {
-                AddCharacter(ch);
-            }
-            charactersdefer.Clear();
-
-            foreach (RenderChunk rc in renderchunksdefer)
-            {
-                AddRenderChunk(rc);
-            }
-            if (renderchunksdefer.Count > 0)
-                SortRenderChunksByLayer();
-            renderchunksdefer.Clear();
-
-
-            _removelist.Clear();
-            lock (lockThis)
-            {
-                //foreach (RenderChunk rc in renderchunks)
-                for(int i = 0 ; i < renderchunks.Count ; ++i)
+                if (renderchunks[i].State == RenderChunk.RenderChunkState.Delete)
                 {
-                    if (renderchunks[i].State == RenderChunk.RenderChunkState.Delete)
-                    {
-                        _removelist.Add(renderchunks[i]);
-                    }
-                    else
-                        renderchunks[i].Update(gametime);
+                    renderchunks.Remove(renderchunks[i]);
                 }
-                foreach (RenderChunk rc in _removelist)
+                else
                 {
-                    renderchunks.Remove(rc);
+                    renderchunks[i].Update(gametime);
                 }
             }
+
 
             if (state == SceneState.ToBattle || state == SceneState.ToMap)
             {
@@ -344,12 +320,6 @@ namespace demo
             }
         }
 
-        public void AddRenderChunkDefer(RenderChunk rc)
-        {
-            renderchunksdefer.Add(rc);
-        }
-
-
         public void AddRenderChunk(RenderChunk rc)
         {
             lock (lockThis)
@@ -361,10 +331,11 @@ namespace demo
 
         public Character GetCharacterByName(string name)
         {
-            foreach (Character ch in characters)
+            //fixme : modify to map
+            for (int i = 0 ; i < characters.Count ; ++i)
             {
-                if (ch.Name == name)
-                    return ch;
+                if (characters[i].Name == name)
+                    return characters[i];
             }
             return null;
         }
@@ -404,10 +375,11 @@ namespace demo
         {
             if (netplayers.Count == 0)
                 return null;
-            foreach (NetPlayer p in netplayers)
+            //fixme : modify to map
+            for(int i = 0 ; i < netplayers.Count ; ++i)
             {
-                if (p.ClientID == clientid)
-                    return p;
+                if (netplayers[i].ClientID == clientid)
+                    return netplayers[i];
             }
             return null;
         }
@@ -420,11 +392,6 @@ namespace demo
         public void AddNetPlayer(NetPlayer ch)
         {
             netplayers.Add(ch);
-        }
-
-        public void AddCharacterDef(Character ch)
-        {
-            charactersdefer.Add(ch);
         }
 
         public void AddCharacter(Character ch)
@@ -488,10 +455,10 @@ namespace demo
             state = SceneState.ToBattle;
             _statetoggletime = _statetoggledur;
             battlefini = false;
-            foreach (RenderChunk rc in renderchunks)
+            for (int i = 0; i < renderchunks.Count; ++i)
             {
-                if (rc.State != RenderChunk.RenderChunkState.Invisible)
-                    rc.State = RenderChunk.RenderChunkState.FadeOut;
+                if (renderchunks[i].State != RenderChunk.RenderChunkState.Invisible)
+                    renderchunks[i].State = RenderChunk.RenderChunkState.FadeOut;
             }
             localplayer.Picture.Direction = new Vector2(1, 0);
             localplayer.ClearActionSet();
@@ -514,10 +481,10 @@ namespace demo
                 return;
             state = SceneState.ToMap;
             _statetoggletime = _statetoggledur;
-            foreach (RenderChunk rc in renderchunks)
+            for (int i = 0; i < renderchunks.Count; ++i)
             {
-                if (rc.State == RenderChunk.RenderChunkState.Show)
-                    rc.State = RenderChunk.RenderChunkState.FadeOut;
+                if (renderchunks[i].State == RenderChunk.RenderChunkState.Show)
+                    renderchunks[i].State = RenderChunk.RenderChunkState.FadeOut;
             }
             UIMgr.ShowLeaderDialog(true);
             localplayer.CloseBattleMenu();
@@ -533,30 +500,30 @@ namespace demo
             if (state == SceneState.Map)
             {
                 localplayer.FaceDirMethod = Character.DirMethod.AutoDectect;
-                foreach (RenderChunk rc in renderchunks)
+                for (int i = 0; i < renderchunks.Count; ++i)
                 {
-                    if (rc.State != RenderChunk.RenderChunkState.Invisible)
-                        rc.State = RenderChunk.RenderChunkState.FadeIn;
+                    if (renderchunks[i].State != RenderChunk.RenderChunkState.Invisible)
+                        renderchunks[i].State = RenderChunk.RenderChunkState.FadeIn;
                 }
-                foreach (Character ch in characters)
+                for (int i = 0; i < characters.Count; ++i)
                 {
                     //rc.State = RenderChunk.RenderChunkState.Show;
-                    if (ch is Player)
+                    if (characters[i] is Player)
                     {
-                        ch.PopPosition();
-                        ch.State = CharacterState.Idle;
+                        characters[i].PopPosition();
+                        characters[i].State = CharacterState.Idle;
                         //ch.Picture.State = RenderChunk.RenderChunkState.FadeIn;
                     }
                 }
-                foreach (Character ch in battlecharacters)
+                for (int i = 0; i < battlecharacters.Count; ++i)
                 {
-                    ch.Picture.State = RenderChunk.RenderChunkState.Delete;
-                    ch.Title.State = RenderChunk.RenderChunkState.Delete;
+                    battlecharacters[i].Picture.State = RenderChunk.RenderChunkState.Delete;
+                    battlecharacters[i].Title.State = RenderChunk.RenderChunkState.Delete;
                 }
                 battlecharacters.Clear();
-                foreach (Spell ch in spells)
+                for (int i = 0; i < spells.Count; ++i)
                 {
-                    ch.Picture.State = RenderChunk.RenderChunkState.Delete;
+                    spells[i].Picture.State = RenderChunk.RenderChunkState.Delete;
                 }
                 spells.Clear();
                 UIElement trackd = UIMgr.GetUIControlByName("dlg_questtrck");
@@ -571,24 +538,24 @@ namespace demo
             {
                 localplayer.FaceDirMethod = Character.DirMethod.Fixed;
                 localplayer.FixedDir = new Vector2(1, 0);
-                foreach (RenderChunk rc in renderchunks)
+                for (int i = 0; i < renderchunks.Count; ++i)
                 {
                     //rc.State = RenderChunk.RenderChunkState.Show;
-                    if (rc is Background || rc is Cloud)
+                    if (renderchunks[i] is Background || renderchunks[i] is Cloud)
                     {
-                        rc.State = RenderChunk.RenderChunkState.FadeIn;
+                        renderchunks[i].State = RenderChunk.RenderChunkState.FadeIn;
                     }
                 }
-                foreach (Character ch in characters)
+                for (int i = 0; i < characters.Count; ++i)
                 {
                     //rc.State = RenderChunk.RenderChunkState.Show;
-                    if (ch is Player)
+                    if (characters[i] is Player)
                     {
-                        ch.PushPosition();
-                        ch.Position = new Vector2(75, GameConst.ScreenHeight / 2) + new Vector2(viewport.X, viewport.Y);
-                        ch.State = CharacterState.Idle;
-                        ch.Picture.State = RenderChunk.RenderChunkState.FadeIn;
-                        ch.Title.State = RenderChunk.RenderChunkState.FadeIn;
+                        characters[i].PushPosition();
+                        characters[i].Position = new Vector2(75, GameConst.ScreenHeight / 2) + new Vector2(viewport.X, viewport.Y);
+                        characters[i].State = CharacterState.Idle;
+                        characters[i].Picture.State = RenderChunk.RenderChunkState.FadeIn;
+                        characters[i].Title.State = RenderChunk.RenderChunkState.FadeIn;
                     }
                 }
                 int numenemy = random.Next(1, 4);
@@ -860,11 +827,11 @@ namespace demo
             turn = Turn.Player;
             localplayer.OperateTarget = null;
             localplayer.Operate = Character.OperateType.None;
-            foreach (Character ch in battlecharacters)
+            for (int i = 0; i < battlecharacters.Count; ++i)
             {
-                if (ch.TemplateID == 3)
+                if (battlecharacters[i].TemplateID == 3)
                 {
-                    if (ch.HP <= ch.MaxHP / 2)
+                    if (battlecharacters[i].HP <= battlecharacters[i].MaxHP / 2)
                     {
                         if (!_battlebackgroundchanged)
                             ChangeBackground(SceneState.Battle);
@@ -994,10 +961,10 @@ namespace demo
             actionlist.Add(new ActionOrder(null, 100));
             localplayer.Order = new ActionOrder(localplayer, random.Next(10, 20));
             actionlist.Add(localplayer.Order);
-            foreach (Monster m in battlecharacters)
+            for (int i = 0; i < battlecharacters.Count; ++i)
             {
-                m.Order = new ActionOrder(m, random.Next(10, 20));
-                actionlist.Add(m.Order);
+                battlecharacters[i].Order = new ActionOrder(battlecharacters[i], random.Next(10, 20));
+                actionlist.Add(battlecharacters[i].Order);
             }
 
             actionlist.Sort();
@@ -1189,25 +1156,25 @@ namespace demo
                     renderchunks.Add(bg);
                 }
                 SortRenderChunksByLayer();
-                foreach (RenderChunk rc in renderchunks)
+                for (int i = 0; i < renderchunks.Count; ++i)
                 {
-                    if (rc is Cloud)
+                    if (renderchunks[i] is Cloud)
                     {
                         //rc.State = RenderChunk.RenderChunkState.FadeOut;
-                        rc.Position = new Vector2((float)random.NextDouble() * (float)GameConst.ScreenWidth * 0.8f,
+                        renderchunks[i].Position = new Vector2((float)random.NextDouble() * (float)GameConst.ScreenWidth * 0.8f,
                                                     (float)random.NextDouble() * (float)GameConst.ScreenHeight)
                                                     + new Vector2(viewport.X, viewport.Y);
 
                     }
                 }
                 localplayer.Position = new Vector2(localplayer.Position.X, localplayer.Position.Y - GameConst.BossRushMode1Offset);
-                
-                foreach (Character ch in battlecharacters)
+
+                for (int i = 0; i < battlecharacters.Count; ++i)
                 {
-                    if (ch.TemplateID == 3)
+                    if (battlecharacters[i].TemplateID == 3)
                     {
-                        ch.Position = new Vector2(ch.Position.X, ch.Position.Y + GameConst.BossRushMode1Offset);
-                      
+                        battlecharacters[i].Position = new Vector2(battlecharacters[i].Position.X,
+                                                                    battlecharacters[i].Position.Y + GameConst.BossRushMode1Offset);
                     }
                 }
                 this.wind = new Vector2(0, -10);
@@ -1222,26 +1189,26 @@ namespace demo
                     renderchunks.Add(bg);
                 }
                 SortRenderChunksByLayer();
-                foreach (RenderChunk rc in renderchunks)
+                for (int i = 0; i < renderchunks.Count; ++i)
                 {
-                    if (rc is Cloud)
+                    if (renderchunks[i] is Cloud)
                     {
                         //rc.State = RenderChunk.RenderChunkState.FadeOut;
-                        rc.Position = new Vector2((float)random.NextDouble() * (float)GameConst.ScreenWidth * 0.8f,
+                        renderchunks[i].Position = new Vector2((float)random.NextDouble() * (float)GameConst.ScreenWidth * 0.8f,
                                                     (float)random.NextDouble() * (float)GameConst.ScreenHeight)
                                                     + new Vector2(viewport.X, viewport.Y);
 
                     }
                 }
                 localplayer.Position = new Vector2(localplayer.Position.X, localplayer.Picture.FrameSize.Y + viewport.Y);
-
-                foreach (Character ch in battlecharacters)
-                {
-                    if (ch.TemplateID == 3)
+                for (int i = 0; i < battlecharacters.Count; ++i)
+                 {
+                     if (battlecharacters[i].TemplateID == 3)
                     {
-                        ch.Position = new Vector2(ch.Position.X, GameConst.ScreenHeight - ch.Picture.FrameSize.Y * 0.5f + viewport.Y);
-                        ch.Picture.Angle = MathHelper.ToRadians(30.0f);
-                        ch.Picture.OriginAngle = MathHelper.ToRadians(30.0f);
+                        battlecharacters[i].Position = new Vector2(battlecharacters[i].Position.X,
+                                                                GameConst.ScreenHeight - battlecharacters[i].Picture.FrameSize.Y * 0.5f + viewport.Y);
+                        battlecharacters[i].Picture.Angle = MathHelper.ToRadians(30.0f);
+                        battlecharacters[i].Picture.OriginAngle = MathHelper.ToRadians(30.0f);
                     }
                 }
                 this.wind = new Vector2(-8, -8);
@@ -1267,11 +1234,11 @@ namespace demo
                     {
                         bg.State = RenderChunk.RenderChunkState.FadeIn;
                     }
-                    foreach (RenderChunk rc in renderchunks)
+                    for (int i = 0; i < renderchunks.Count; ++i)
                     {
-                        if (rc is Cloud)
+                        if (renderchunks[i] is Cloud)
                         {
-                            rc.State = RenderChunk.RenderChunkState.FadeIn;
+                            renderchunks[i].State = RenderChunk.RenderChunkState.FadeIn;
                         }
                     }
                     _battlebackgroundchanged = false;
@@ -1288,19 +1255,12 @@ namespace demo
                     {
                         bg.State = RenderChunk.RenderChunkState.FadeIn;
                     }
-                    foreach (RenderChunk rc in renderchunks)
+                    for (int i = 0; i < renderchunks.Count; ++i)
                     {
-                        if (rc is Cloud)
+                        if (renderchunks[i] is Cloud)
                         {
-                            rc.State = RenderChunk.RenderChunkState.FadeIn;
-                        }
-                    }
-                    foreach (RenderChunk rc in renderchunks)
-                    {
-                        if (rc is Cloud)
-                        {
-                            //generate position
-                            rc.Position = new Vector2((float)random.NextDouble() * actualSize.Z, (float)random.NextDouble() * actualSize.W * 0.9f);
+                            renderchunks[i].State = RenderChunk.RenderChunkState.FadeIn;
+                            renderchunks[i].Position = new Vector2((float)random.NextDouble() * actualSize.Z, (float)random.NextDouble() * actualSize.W * 0.9f);
                         }
                     }
                     this.wind = new Vector2(1, 0);
@@ -1317,21 +1277,15 @@ namespace demo
                     {
                         bg.State = RenderChunk.RenderChunkState.FadeIn;
                     }
-                    foreach (RenderChunk rc in renderchunks)
+                    for (int i = 0; i < renderchunks.Count; ++i)
                     {
-                        if (rc is Cloud)
+                        if (renderchunks[i] is Cloud)
                         {
-                            rc.State = RenderChunk.RenderChunkState.FadeIn;
+                            renderchunks[i].State = RenderChunk.RenderChunkState.FadeIn;
+                            renderchunks[i].Position = new Vector2((float)random.NextDouble() * actualSize.Z, (float)random.NextDouble() * actualSize.W * 0.9f);
                         }
                     }
-                   foreach (RenderChunk rc in renderchunks)
-                    {
-                        if (rc is Cloud)
-                        {
-                            //generate position
-                            rc.Position = new Vector2((float)random.NextDouble() * actualSize.Z, (float)random.NextDouble() * actualSize.W * 0.9f);
-                        }
-                    }
+
                     this.wind = new Vector2(1, 0);
                     _battlebackgroundchanged = false;
                     localplayer.Picture.Angle = 0.0f;
@@ -1346,14 +1300,14 @@ namespace demo
                     foreach (Background bg in mapbackgrundlist)
                     {
                         bg.State = RenderChunk.RenderChunkState.FadeOut;
-                        
+
                     }
                     _changebgtime = _changebgdur;
-                    foreach (RenderChunk rc in renderchunks)
+                    for (int i = 0; i < renderchunks.Count; ++i)
                     {
-                        if (rc is Cloud)
+                        if (renderchunks[i] is Cloud)
                         {
-                            rc.State = RenderChunk.RenderChunkState.FadeOut;
+                            renderchunks[i].State = RenderChunk.RenderChunkState.FadeOut;
                         }
                     }
                 }
@@ -1362,7 +1316,7 @@ namespace demo
                     foreach (Background bg in mapbackgrundlist)
                     {
                         bg.State = RenderChunk.RenderChunkState.FadeOut;
-                        
+
                     }
 
                     _changebgtime = _changebgdur;
@@ -1370,7 +1324,7 @@ namespace demo
                     AddRenderChunk(fadebg);
                     SortRenderChunksByLayer();
                     //localplayer.PushPosition();
-                   
+
 
                 }
                 else if (GameConst.BossRushMode == 2)
@@ -1378,7 +1332,7 @@ namespace demo
                     foreach (Background bg in mapbackgrundlist)
                     {
                         bg.State = RenderChunk.RenderChunkState.FadeOut;
-                       
+
                     }
 
                     _changebgtime = _changebgdur;
@@ -1491,6 +1445,7 @@ namespace demo
                         localplayer.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
                         localplayer.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
                         localplayer.InteractiveTarget = _hostCharacter;
+                        
                     }
                     return 1;
                 }
@@ -1531,33 +1486,33 @@ namespace demo
                     return;
                 }*/
             }
-            foreach (Character ch in characters)
+            for (int i = 0; i < characters.Count; ++i)
             {
-                if (ch is Player && localplayer.Operate != Character.OperateType.Magic)
+                if (characters[i] is Player && localplayer.Operate != Character.OperateType.Magic)
                     continue;
-                if (ch.Picture.State != RenderChunk.RenderChunkState.Show)
+                if (characters[i].Picture.State != RenderChunk.RenderChunkState.Show)
                     continue;
-                Rectangle rect = new Rectangle((int)(ch.Position.X - ch.Picture.FrameSize.X * 0.3f),
-                                                (int)(ch.Position.Y - ch.Picture.FrameSize.Y * 0.3f),
-                                                (int)(ch.Picture.FrameSize.X * 0.6f),
-                                                (int)(ch.Picture.FrameSize.Y * 0.6f));
+                Rectangle rect = new Rectangle((int)(characters[i].Position.X - characters[i].Picture.FrameSize.X * 0.3f),
+                                                (int)(characters[i].Position.Y - characters[i].Picture.FrameSize.Y * 0.3f),
+                                                (int)(characters[i].Picture.FrameSize.X * 0.6f),
+                                                (int)(characters[i].Picture.FrameSize.Y * 0.6f));
                 if (rect.Contains(new Point(x, y)))
                 {
-                    host = ch;
+                    host = characters[i];
                     break;
                 }
             }
             if (host == null)
             {
-                foreach (Character ch in battlecharacters)
+                for (int i = 0; i < battlecharacters.Count; ++i)
                 {
-                    Rectangle rect = new Rectangle((int)(ch.Position.X - ch.Picture.FrameSize.X * 0.3f),
-                                                    (int)(ch.Position.Y - ch.Picture.FrameSize.Y * 0.3f),
-                                                    (int)(ch.Picture.FrameSize.X * 0.6f),
-                                                    (int)(ch.Picture.FrameSize.Y * 0.6f));
+                    Rectangle rect = new Rectangle((int)(battlecharacters[i].Position.X - battlecharacters[i].Picture.FrameSize.X * 0.3f),
+                                                    (int)(battlecharacters[i].Position.Y - battlecharacters[i].Picture.FrameSize.Y * 0.3f),
+                                                    (int)(battlecharacters[i].Picture.FrameSize.X * 0.6f),
+                                                    (int)(battlecharacters[i].Picture.FrameSize.Y * 0.6f));
                     if (rect.Contains(new Point(x, y)))
                     {
-                        host = ch;
+                        host = battlecharacters[i];
                         break;
                     }
                 }

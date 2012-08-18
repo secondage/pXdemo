@@ -277,7 +277,7 @@ namespace demo
                 pic = value;
                 if (scene != null)
                 {
-                    scene.AddRenderChunkDefer(pic);
+                    scene.AddRenderChunk(pic);
                 }
             }
         }
@@ -782,7 +782,8 @@ namespace demo
             {
                 if (this.GetType() == typeof(demo.Player) && ClientID != 0 && scene.State == demo.Scene.SceneState.Map)
                 {
-                    if (actionsets[0].factor == CharacterActionSetChangeFactor.ArriveTarget)
+                    if (actionsets[0].factor == CharacterActionSetChangeFactor.ArriveTarget ||
+                        actionsets[0].factor == CharacterActionSetChangeFactor.ArriveInteractiveTarget)
                     {
                         MainGame.SendMoveFinishMsg(this);
                     }

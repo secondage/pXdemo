@@ -264,8 +264,16 @@ namespace demo
             NetPlayer p = CurrentScene.FindNetPlayer(pn.ClientID);
             if (p != null)
             {
-                p.Picture.State = RenderChunk.RenderChunkState.FadeOutToDel;
-                p.Title.State = RenderChunk.RenderChunkState.FadeOutToDel;
+                if (CurrentScene.State == Scene.SceneState.Map)
+                {
+                    p.Picture.State = RenderChunk.RenderChunkState.FadeOutToDel;
+                    p.Title.State = RenderChunk.RenderChunkState.FadeOutToDel;
+                }
+                else
+                {
+                    p.Picture.State = RenderChunk.RenderChunkState.Delete;
+                    p.Title.State = RenderChunk.RenderChunkState.Delete;
+                }
                 CurrentScene.DelNetPlayer(p);
             }
             
@@ -295,7 +303,7 @@ namespace demo
                 player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
                 player.AddPreRenderEffect("Spawn", spawnEffect);
                 player.ClientID = pn.ClientID;
-                CurrentScene.AddCharacterDef(player);
+                CurrentScene.AddCharacter(player);
                 CurrentScene.Player = player;
                 player.UpdateSceneScroll();
                 this.Window.Title = pn.Name;
@@ -313,10 +321,10 @@ namespace demo
                 playernet.Title = title;
                 playernet.Position = new Vector2(pn.Position[0], pn.Position[1]);
                 playernet.Speed = pn.Speed;// GameConst.PlayerSpeed;
-                player.ATK = pn.ATK;//GameConst.PlayerAtk;
-                player.DEF = pn.DEF;//GameConst.PlayerAtk;
-                player.HP = pn.HP;//GameConst.PlayerHP;
-                player.MaxHP = pn.MaxHP;// GameConst.PlayerHP;
+                playernet.ATK = pn.ATK;//GameConst.PlayerAtk;
+                playernet.DEF = pn.DEF;//GameConst.PlayerAtk;
+                playernet.HP = pn.HP;//GameConst.PlayerHP;
+                playernet.MaxHP = pn.MaxHP;// GameConst.PlayerHP;
                 //playernet.AddActionSet("Idle", CharacterState.Spawn, CharacterActionSetChangeFactor.EffectCompleted, "Spawn");
                 playernet.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
                 playernet.ClientID = pn.ClientID;
@@ -544,6 +552,11 @@ namespace demo
                                     //   player.State = Character.CharacterState.Launch;
                                     //player.Target = new Vector2(CurrentScene.Viewport.X + ms.X, CurrentScene.Viewport.Y + ms.Y);
                                     //GameCursor.SetCursor(GameCursor.CursorType.Talk);
+                                    if (ClientID != 0)
+                                    {
+                                        player.StartMoveSyncTimer();
+                                        SendRequestMovementMsg(player);
+                                    }
                                 }
                             }
                         }
