@@ -918,6 +918,9 @@ namespace demo
                                 fireball.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveAttackTarget, localplayer.OperateTarget);
                                 fireball.AddActionSet("Attack", CharacterState.Attack, CharacterActionSetChangeFactor.AnimationCompleted, null);
                                 fireball.AddActionSet("Idle", CharacterState.Dead, CharacterActionSetChangeFactor.AnimationCompleted, null);
+
+                                localplayer.AddActionSet("Attack2", CharacterState.Attack2, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                                localplayer.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
                             }
                         }
                         else

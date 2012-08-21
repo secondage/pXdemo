@@ -246,7 +246,7 @@ namespace demo
             }
             else
             {
-                ProjectXServer.Messages.PlayerLoginMsg msg = new ProjectXServer.Messages.PlayerLoginMsg();
+                ProjectXServer.Messages.PlayerLoginSelfMsg msg = new ProjectXServer.Messages.PlayerLoginSelfMsg();
                 msg.ClientID = 0;
                 msg.Name = "player1";
                 msg.Position = new float[] {GameConst.ScreenWidth / 2, GameConst.ScreenHeight / 2};
@@ -255,7 +255,7 @@ namespace demo
                 msg.DEF = 30;
                 msg.HP = 1000;
                 msg.MaxHP = 1000;
-                CreatePlayer(msg);
+                CreateLocalPlayer(msg);
             }
         }
 
@@ -279,58 +279,61 @@ namespace demo
             
         }
 
-        private void CreatePlayer(ProjectXServer.Messages.PlayerLoginMsg pn)
+        private void CreateLocalPlayer(ProjectXServer.Messages.PlayerLoginSelfMsg pn)
         {
             contentLoadingTask.Wait();
-            if (pn.ClientID == ClientID)
+            player = new Player(pn.Name, CurrentScene);
+            CharacterDefinition.PicDef pd = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
+            CharacterPic cpic = new CharacterPic(pd, 15);
+            player.Picture = cpic;
+            CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
+            title.Layer = 15;
+            title.NameString = pn.Name;
+            title.Character = player;
+            player.Title = title;
+            player.Position = new Vector2(pn.Position[0], pn.Position[1]);
+            player.Speed = pn.Speed;//GameConst.PlayerSpeed;
+            player.ATK = pn.ATK;//GameConst.PlayerAtk;
+            player.DEF = pn.DEF;//GameConst.PlayerAtk;
+            player.HP = pn.HP;//GameConst.PlayerHP;
+            player.MaxHP = pn.MaxHP;// GameConst.PlayerHP;
+            player.AddActionSet("Idle", CharacterState.Spawn, CharacterActionSetChangeFactor.EffectCompleted, "Spawn");
+            player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
+            player.AddPreRenderEffect("Spawn", spawnEffect);
+            player.ClientID = pn.ClientID;
+            CurrentScene.AddCharacter(player);
+            CurrentScene.Player = player;
+            player.UpdateSceneScroll();
+            Control ctrl = System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle);
+            ctrl.Invoke(new Action(() =>
             {
-                player = new Player(pn.Name, CurrentScene);
-                CharacterDefinition.PicDef pd = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
-                CharacterPic cpic = new CharacterPic(pd, 15);
-                player.Picture = cpic;
-                CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
-                title.Layer = 15;
-                title.NameString = pn.Name;
-                title.Character = player;
-                player.Title = title;
-                player.Position = new Vector2(pn.Position[0], pn.Position[1]);
-                player.Speed = pn.Speed;//GameConst.PlayerSpeed;
-                player.ATK = pn.ATK;//GameConst.PlayerAtk;
-                player.DEF = pn.DEF;//GameConst.PlayerAtk;
-                player.HP = pn.HP;//GameConst.PlayerHP;
-                player.MaxHP = pn.MaxHP;// GameConst.PlayerHP;
-                player.AddActionSet("Idle", CharacterState.Spawn, CharacterActionSetChangeFactor.EffectCompleted, "Spawn");
-                player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
-                player.AddPreRenderEffect("Spawn", spawnEffect);
-                player.ClientID = pn.ClientID;
-                CurrentScene.AddCharacter(player);
-                CurrentScene.Player = player;
-                player.UpdateSceneScroll();
                 this.Window.Title = pn.Name;
-            }
-            else
-            {
-                NetPlayer playernet = new NetPlayer(pn.Name, CurrentScene);
-                CharacterDefinition.PicDef pd = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
-                CharacterPic cpic = new CharacterPic(pd, 15);
-                playernet.Picture = cpic;
-                CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
-                title.Layer = 15;
-                title.NameString = pn.Name;
-                title.Character = playernet;
-                playernet.Title = title;
-                playernet.Position = new Vector2(pn.Position[0], pn.Position[1]);
-                playernet.Speed = pn.Speed;// GameConst.PlayerSpeed;
-                playernet.ATK = pn.ATK;//GameConst.PlayerAtk;
-                playernet.DEF = pn.DEF;//GameConst.PlayerAtk;
-                playernet.HP = pn.HP;//GameConst.PlayerHP;
-                playernet.MaxHP = pn.MaxHP;// GameConst.PlayerHP;
-                //playernet.AddActionSet("Idle", CharacterState.Spawn, CharacterActionSetChangeFactor.EffectCompleted, "Spawn");
-                playernet.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
-                playernet.ClientID = pn.ClientID;
-                //playernet.AddPreRenderEffect("Spawn", spawnEffect);
-                CurrentScene.AddNetPlayer(playernet);
-            }
+            }));
+            
+        }
+
+        private void CreatePlayer(ProjectXServer.Messages.PlayerLoginMsg pn)
+        {
+            NetPlayer playernet = new NetPlayer(pn.Name, CurrentScene);
+            CharacterDefinition.PicDef pd = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
+            CharacterPic cpic = new CharacterPic(pd, 15);
+            playernet.Picture = cpic;
+            CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
+            title.Layer = 15;
+            title.NameString = pn.Name;
+            title.Character = playernet;
+            playernet.Title = title;
+            playernet.Position = new Vector2(pn.Position[0], pn.Position[1]);
+            playernet.Speed = pn.Speed;// GameConst.PlayerSpeed;
+            playernet.ATK = pn.ATK;//GameConst.PlayerAtk;
+            playernet.DEF = pn.DEF;//GameConst.PlayerAtk;
+            playernet.HP = pn.HP;//GameConst.PlayerHP;
+            playernet.MaxHP = pn.MaxHP;// GameConst.PlayerHP;
+            //playernet.AddActionSet("Idle", CharacterState.Spawn, CharacterActionSetChangeFactor.EffectCompleted, "Spawn");
+            playernet.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
+            playernet.ClientID = pn.ClientID;
+            //playernet.AddPreRenderEffect("Spawn", spawnEffect);
+            CurrentScene.AddNetPlayer(playernet);
         }
 
         /// <summary>
@@ -552,10 +555,18 @@ namespace demo
                                     //   player.State = Character.CharacterState.Launch;
                                     //player.Target = new Vector2(CurrentScene.Viewport.X + ms.X, CurrentScene.Viewport.Y + ms.Y);
                                     //GameCursor.SetCursor(GameCursor.CursorType.Talk);
-                                    if (ClientID != 0)
+                                    if (player.State == CharacterState.Idle)
                                     {
-                                        player.StartMoveSyncTimer();
-                                        SendRequestMovementMsg(player);
+                                        if (ClientID != 0)
+                                        {
+                                            player.StartMoveSyncTimer();
+                                            SendRequestMovementMsg(player);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (ClientID != 0)
+                                            SendTargetChangedMsg(player);
                                     }
                                 }
                             }

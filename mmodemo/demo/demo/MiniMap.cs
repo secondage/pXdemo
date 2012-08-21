@@ -118,8 +118,9 @@ namespace demo
             sb.End();
             //Vector2 p = new Vector2();
             sb.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
-            foreach (Character ch in characters)
+            for (int i = 0 ; i < characters.Count ; ++i)
             {
+                Character ch = characters[i];
                 //ch.Position;
                 p.X = ch.Position.X / scene.ActualSize.Z * Size.X;
                 p.Y = ch.Position.Y / scene.ActualSize.W * Size.Y;
@@ -138,8 +139,9 @@ namespace demo
                 }
 
             }
-            foreach (Player ch in netplayers)
+            for (int i = 0  ; i < netplayers.Count ; ++i)
             {
+                NetPlayer ch = netplayers[i];
                 p.X = ch.Position.X / scene.ActualSize.Z * Size.X;
                 p.Y = ch.Position.Y / scene.ActualSize.W * Size.Y;
                 sb.Draw(charactertexture, p, null, Color.Red, 0.0f, new Vector2(charactertexture.Width / 2, charactertexture.Height / 2), new Vector2(0.5f, 0.5f), SpriteEffects.None, 0.0f);

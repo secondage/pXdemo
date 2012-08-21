@@ -53,6 +53,11 @@ namespace demo
 
                 }
             }
+            else if (adapter.Message is ProjectXServer.Messages.PlayerLoginSelfMsg)
+            {
+                ProjectXServer.Messages.PlayerLoginSelfMsg plm = (ProjectXServer.Messages.PlayerLoginSelfMsg)adapter.Message;
+                CreateLocalPlayer(plm);
+            }
             else if (adapter.Message is ProjectXServer.Messages.PlayerLoginMsg)
             {
                 ProjectXServer.Messages.PlayerLoginMsg plm = (ProjectXServer.Messages.PlayerLoginMsg)adapter.Message;
