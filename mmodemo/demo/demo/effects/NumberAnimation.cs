@@ -24,7 +24,7 @@ namespace demo.effects
             Value = value;
         }
 
-        public Color Color
+        public override Color Color
         {
             get
             {

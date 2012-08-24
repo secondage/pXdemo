@@ -47,6 +47,7 @@ namespace demo
         protected Color origincolor = Color.White;
         protected RenderChunkState state;
         protected CoordinateSystemType coordsystem = CoordinateSystemType.World;
+        private bool highlight;
         
 
         private float stateAniCurTime = -1.0f;
@@ -161,7 +162,22 @@ namespace demo
             }
         }
 
-        public Color Color
+        public Vector2 TextureSize
+        {
+            get
+            {
+                try
+                {
+                    return new Vector2(texture.Width, texture.Height);
+                }
+                catch
+                {
+                    return Vector2.Zero;
+                }
+            }
+        }
+
+        public virtual Color Color
         {
             get
             {
@@ -192,6 +208,19 @@ namespace demo
                 return ActualSize;
             }
         }
+
+        public bool HighLight
+        {
+            get
+            {
+                return highlight;
+            }
+            set
+            {
+                highlight = value;
+            }
+        }
+
 
         public RenderChunkState State
         {

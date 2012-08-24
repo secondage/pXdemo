@@ -19,6 +19,7 @@ using NetSyncObject;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Xml;
+using System.Diagnostics;
 
 namespace demo
 {
@@ -29,6 +30,17 @@ namespace demo
     /// </summary>
     public partial class MainGame : Microsoft.Xna.Framework.Game
     {
+        public enum EditorOp
+        {
+            Move,
+            Copy,
+            Cut,
+            Paste,
+            Delete,
+            Create,
+            Save,
+            Scale,
+        }
 
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -40,6 +52,8 @@ namespace demo
         private LoginDialog dlgLogin;
         private long ClientID;
         private bool ContentLoadCompleted = false;
+
+        public static bool IsEditorMode { get; set; }
 
         private System.Threading.Tasks.Task contentLoadingTask = null;
 
@@ -65,6 +79,11 @@ namespace demo
 #endif
             Control ctrl = System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle);
             ctrl.Move += new EventHandler(MainWindow_Move);
+            ctrl.MouseMove += new MouseEventHandler(MainWindow_MouseMove);
+            ctrl.MouseUp += new MouseEventHandler(MainWindow_MouseUp);
+            ctrl.MouseWheel += new MouseEventHandler(MainWindow_MouseWheel);
+            ctrl.MouseDown += new MouseEventHandler(MainWindow_MouseDown);
+            ctrl.MouseClick += new MouseEventHandler(MainWindow_MouseClick);
             GameCursor.Initialize(Cursor.Current.Handle);
             GameCursor.SetCursor(GameCursor.CursorType.Normal);
 
@@ -78,6 +97,168 @@ namespace demo
                                                         (this.Window.ClientBounds.Height - dlgLogin.Size.Height) * 3 / 4 + this.Window.ClientBounds.Y);
             }
         }
+
+
+        protected void MainWindow_MouseDown(object sender, MouseEventArgs args)
+        {
+           UIMgr.HandleMessage(UIMessage.MouseDown, args.X, args.Y);
+        }
+
+        protected void MainWindow_MouseClick(object sender, MouseEventArgs args)
+        {
+           int result = UIMgr.HandleMessage(UIMessage.MouseClick, args.X, args.Y);
+           if (result != 0)
+               return;
+
+           if (!MainGame.IsEditorMode)
+           {
+               if (args.Button == MouseButtons.Left)
+               {
+                   if (CurrentScene.State == Scene.SceneState.Map)
+                   {
+                       if (clicktimer == null)
+                       {
+                           clicktimer = new HiPerfTimer();
+                           clicktimer.Start();
+                       }
+
+                       clicktime = clicktimer.GetTotalDuration();
+
+                       if (clicktime > 0.3 && (player.State == CharacterState.Idle || player.State == CharacterState.Moving))
+                       {
+                           clicktimer.Stop();
+                           clicktimer.Start();
+                           int sresult = CurrentScene.SelectCharacter();
+                           if (sresult == 0)
+                           {
+                               PreRenderEffect clickeffect = new PreRenderEffect("click", 128, 128);
+                               clickeffect.Initialize(Content);
+                               clickeffect.Layer = 4;
+                               clickeffect.PlaySpeed = 3.0f;
+                               clickeffect.Loop = false;
+                               clickeffect.Position = new Vector2(CurrentScene.Viewport.X + args.X, CurrentScene.Viewport.Y + args.Y);
+                               clickeffect.Play();
+                               clickeffect.OnAnimationFini += new EventHandler(clickeffect_OnAnimationFini);
+                               CurrentScene.AddRenderChunk(clickeffect);
+
+                               //if (player.State == CharacterState.Idle)
+                               //   player.State = CharacterState.Launch;
+                               player.Target = new Vector2(CurrentScene.Viewport.X + args.X, CurrentScene.Viewport.Y + args.Y);
+                               if (player.State == CharacterState.Idle)
+                               {
+                                   player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                                   player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Target);
+                                   player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                                   player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
+                                   if (ClientID != 0)
+                                   {
+                                       player.StartMoveSyncTimer();
+                                       SendRequestMovementMsg(player);
+                                   }
+                               }
+                               else
+                               {
+                                   if (ClientID != 0)
+                                       SendTargetChangedMsg(player);
+                                   //player.AddActionSetPre("Moving", CharacterState.Moving, -1, CharacterActionSetChangeFactor.ArriveTarget);
+                                   //player.AddActionSet("Landing", CharacterState.Landing, -1, CharacterActionSetChangeFactor.AnimationCompleted);
+                                   //player.AddActionSet("Idle", CharacterState.Idle, -1, CharacterActionSetChangeFactor.AnimationCompleted);
+                               }
+
+
+                               if (!player.Interacting)
+                                   player.InteractiveTarget = null;
+                           }
+                           else if (sresult == 1)
+                           {
+                               //if (player.State == Character.CharacterState.Idle)
+                               //   player.State = Character.CharacterState.Launch;
+                               //player.Target = new Vector2(CurrentScene.Viewport.X + ms.X, CurrentScene.Viewport.Y + ms.Y);
+                               //GameCursor.SetCursor(GameCursor.CursorType.Talk);
+                               if (player.State == CharacterState.Idle)
+                               {
+                                   if (ClientID != 0)
+                                   {
+                                       player.StartMoveSyncTimer();
+                                       SendRequestMovementMsg(player);
+                                   }
+                               }
+                               else
+                               {
+                                   if (ClientID != 0)
+                                       SendTargetChangedMsg(player);
+                               }
+                           }
+                       }
+                       else
+                       {
+                           if ((player.State == CharacterState.Idle || player.State == CharacterState.Moving))
+                           {
+                               int x = 0;
+                               x++;
+                               Debug.WriteLine("too fast to click");
+                           }
+                       }
+                   }
+                   else if (CurrentScene.State == Scene.SceneState.Battle)
+                   {
+                       CurrentScene.ConfirmOperateTarget();
+                   }
+               }
+           }
+        }
+
+        protected void MainWindow_MouseMove(object sender, MouseEventArgs args)
+        {
+            _mousex = args.X;
+            _mousey = args.Y;
+            _mousebutton = args.Button;
+            int result = UIMgr.HandleMessage(UIMessage.MouseMove, args.X, args.Y);
+            if (result != 0)
+                return;
+            if (MainGame.IsEditorMode)
+            {
+                if (args.Button == MouseButtons.Left)
+                {
+                    CurrentScene.EditorOperate(EditorOp.Move, args.X, args.Y);
+                    CurrentScene.HighLightChunkByPoint(args.X, args.Y);
+                }
+                else
+                {
+                    CurrentScene.HighLightChunkByPoint(args.X, args.Y);
+                }
+            }
+            else
+            {
+                CurrentScene.HighLightCharacterByPoint(args.X, args.Y);
+            }
+        }
+
+        protected void MainWindow_MouseUp(object sender, MouseEventArgs args)
+        {
+            if (MainGame.IsEditorMode)
+            {
+                if (args.Button == MouseButtons.Left)
+                {
+                    CurrentScene.DoEditorMenu(0, 0, false);
+                }
+                else if (args.Button == MouseButtons.Right)
+                {
+                    CurrentScene.DoEditorMenu(args.X, args.Y, true);
+                }
+            }
+            UIMgr.HandleMessage(UIMessage.MouseUp, args.X, args.Y);
+        }
+
+        protected void MainWindow_MouseWheel(object sender, MouseEventArgs args)
+        {
+            if (MainGame.IsEditorMode)
+            {
+                if (args.Delta != 0)
+                    CurrentScene.EditorOperate(EditorOp.Scale, args.Delta, args.Delta);
+            }
+        }
+
 
         protected void Graphics_DeviceCreated(Object sender, EventArgs args)
         {
@@ -97,7 +278,8 @@ namespace demo
             // TODO: Add your initialization logic here
 
             CurrentScene = new Scene("scene1", 0, 0, GameConst.ScreenWidth, GameConst.ScreenHeight);
-            CurrentScene.ActualSize = new Vector4(0, 0, 2048 * GameConst.BackgroundScale, 2048 * GameConst.BackgroundScale);
+            //CurrentScene.ActualSize = new Vector4(0, 0, 2048 * GameConst.BackgroundScale, 2048 * GameConst.BackgroundScale);
+            CurrentScene.ActualSize = new Vector4(0, 0, 20000, 2048 * GameConst.BackgroundScale);
 
             //init net client
             try
@@ -178,7 +360,7 @@ namespace demo
                         CharacterTitle.QuestCompletedTexture = Content.Load<Texture2D>(@"questicon/done");
                         CharacterTitle.QuestNonCompletedTexture = Content.Load<Texture2D>(@"questicon/notdone");
 
-                        
+
                         // load cloud texture
                         for (int i = 0; i < 15; ++i)
                         {
@@ -204,7 +386,7 @@ namespace demo
                         CurrentScene.InitMiniMap(texminimap, texminimapchar, texmapmask, 0, GameConst.ScreenHeight - 256, 256, 256);
 
                         CharacterTitle.BlockTexture = Content.Load<Texture2D>(@"effect/block");
-                        //UIMgr.AddUIControl("Dialog_Leader", "leader_dlg", (int)UILayout.Right, (int)UILayout.Top, 0, 0, -1, 99, this);
+                        UIMgr.AddUIControl("Dialog_Leader", "leader_dlg", (int)UILayout.Right, (int)UILayout.Top, 0, 0, -1, 99, this);
                         CurrentScene.GenerateClouds(cloudTextureArray);
                         CurrentScene.SortRenderChunksByLayer();
                         Thread.Sleep(10);
@@ -212,7 +394,7 @@ namespace demo
                     }
                     catch (ContentLoadException e)
                     {
-                       throw new ContentLoadException("载入资源发生错误，程序关闭: " + e.Message);
+                        throw new ContentLoadException("载入资源发生错误，程序关闭: " + e.Message);
                     }
                 }
             ), token);
@@ -249,7 +431,7 @@ namespace demo
                 ProjectXServer.Messages.PlayerLoginSelfMsg msg = new ProjectXServer.Messages.PlayerLoginSelfMsg();
                 msg.ClientID = 0;
                 msg.Name = "player1";
-                msg.Position = new float[] {GameConst.ScreenWidth / 2, GameConst.ScreenHeight / 2};
+                msg.Position = new float[] { GameConst.ScreenWidth / 2, GameConst.ScreenHeight / 2 };
                 msg.Speed = GameConst.PlayerSpeed;
                 msg.ATK = 500;
                 msg.DEF = 30;
@@ -276,7 +458,7 @@ namespace demo
                 }
                 CurrentScene.DelNetPlayer(p);
             }
-            
+
         }
 
         private void CreateLocalPlayer(ProjectXServer.Messages.PlayerLoginSelfMsg pn)
@@ -309,7 +491,7 @@ namespace demo
             {
                 this.Window.Title = pn.Name;
             }));
-            
+
         }
 
         private void CreatePlayer(ProjectXServer.Messages.PlayerLoginMsg pn)
@@ -397,6 +579,11 @@ namespace demo
         MouseState _msLast = new MouseState();
         KeyboardState _ksLast = new KeyboardState();
         HiPerfTimer clicktimer = new HiPerfTimer();
+        double clicktime = 0;
+        private int _mousex;
+        private int _mousey;
+        private MouseButtons _mousebutton;
+       
         public void UpdateInput()
         {
             if (player == null)
@@ -404,47 +591,107 @@ namespace demo
             Control ctrl = System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle);
             if (Form.ActiveForm == null || !Form.ActiveForm.Equals(ctrl))
                 return;
-           
+
             KeyboardState ks = Keyboard.GetState();
             Vector4 vp = CurrentScene.Viewport;
             if (CurrentScene.State == Scene.SceneState.Map)
             {
-                if (ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Down))
+                bool isscroll = false;
+                if (MainGame.IsEditorMode)
                 {
-                    vp.Y += GameConst.ScrollSpeed;
+                    if (ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Down))
+                    {
+                        vp.Y += GameConst.ScrollSpeed;
+                        isscroll = true;
+                    }
+                    if (ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Up))
+                    {
+                        vp.Y -= GameConst.ScrollSpeed;
+                        isscroll = true;
+                    }
+                    if (ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Left))
+                    {
+                        vp.X -= GameConst.ScrollSpeed;
+                        isscroll = true;
+                    }
+                    if (ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Right))
+                    {
+                        vp.X += GameConst.ScrollSpeed;
+                        isscroll = true;
+                    }
+                    if (MainGame.IsEditorMode)
+                    {
+                        if (isscroll)
+                        {
+                            MouseEventArgs mea = new MouseEventArgs(_mousebutton, 0, _mousex, _mousey, 0);
+                            MainWindow_MouseMove(this, mea);
+                            CurrentScene.Viewport = vp;
+                            Debug_ClipScroll();
+                        }
+                    }
                 }
-                if (ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Up))
+                if (ks.IsKeyUp(Microsoft.Xna.Framework.Input.Keys.E) && _ksLast.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.E))
                 {
-                    vp.Y -= GameConst.ScrollSpeed;
+                    if (ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftControl))
+                    {
+                        MainGame.IsEditorMode = !MainGame.IsEditorMode;
+                        Control window = System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle);
+                        if (MainGame.IsEditorMode)
+                        {
+                            window.Invoke(new Action(() =>
+                            {
+                                this.Window.Title = "Editor mode";
+                            }));
+                        }
+                        else
+                        {
+                            if (player != null)
+                            {
+                                window.Invoke(new Action(() =>
+                                {
+                                    this.Window.Title = player.Name;
+                                }));
+                                player.UpdateSceneScroll();
+                            }
+                        }
+                    }
                 }
-                if (ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Left))
+                if (ks.IsKeyUp(Microsoft.Xna.Framework.Input.Keys.S) && _ksLast.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.S))
                 {
-                    vp.X -= GameConst.ScrollSpeed;
-                }
-                if (ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Right))
-                {
-                    vp.X += GameConst.ScrollSpeed;
+                    if (ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftControl))
+                    {
+                        if (MainGame.IsEditorMode)
+                        {
+                            CurrentScene.EditorOperate(EditorOp.Save, 0, 0);
+                        }
+                    }
                 }
             }
             else if (CurrentScene.State == Scene.SceneState.Battle)
             {
-                if (ks.IsKeyUp(Microsoft.Xna.Framework.Input.Keys.R) && _ksLast.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.R))
+                if (!MainGame.IsEditorMode)
                 {
-                    CurrentScene.BattleRound(1);
+                    if (ks.IsKeyUp(Microsoft.Xna.Framework.Input.Keys.R) && _ksLast.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.R))
+                    {
+                        CurrentScene.BattleRound(1);
+                    }
                 }
             }
             if (ks.IsKeyUp(Microsoft.Xna.Framework.Input.Keys.S) && _ksLast.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.S))
             {
-                CurrentScene.IntoBattle();
+                if (!MainGame.IsEditorMode)
+                    CurrentScene.IntoBattle();
                 //dialog.Position += new Vector2(4,0);
             }
             if (ks.IsKeyUp(Microsoft.Xna.Framework.Input.Keys.D) && _ksLast.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.D))
             {
                 //CurrentScene.ReturnMap();
-                effects.NumberAnimation na = new effects.NumberAnimation(1789);
-                na.Position = new Vector2(200, 200);
-                na.Play(CurrentScene);
-                
+                if (MainGame.IsEditorMode)
+                {
+                    effects.NumberAnimation na = new effects.NumberAnimation(1789);
+                    na.Position = new Vector2(200, 200);
+                    na.Play(CurrentScene);
+                }
             }
 
             /* if (ks.IsKeyUp(Keys.S))
@@ -465,18 +712,16 @@ namespace demo
 
                  container.Dispose();
              }*/
-            CurrentScene.Viewport = vp;
-            Debug_ClipScroll();
+           
             //mouse
             MouseState ms = Mouse.GetState();
 
 
             int msgr = 0;
-            if (ms.X != _msLast.X || ms.Y != _msLast.Y)
+            /*if (ms.X != _msLast.X || ms.Y != _msLast.Y)
             {
                 msgr += UIMgr.HandleMessage(UIMessage.MouseMove, ms.X, ms.Y);
             }
-
             if (ms.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
             {
                 msgr += UIMgr.HandleMessage(UIMessage.MouseDown, ms.X, ms.Y);
@@ -486,87 +731,101 @@ namespace demo
                 msgr += UIMgr.HandleMessage(UIMessage.MouseUp, ms.X, ms.Y);
                 if (_msLast.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
                     msgr += UIMgr.HandleMessage(UIMessage.MouseClick, ms.X, ms.Y);
-            }
-
-            if (msgr == 0)
+            }*/
+            /*if (msgr == 0)
             {
-
                 //if (CurrentScene.State == Scene.SceneState.Battle)
-                CurrentScene.HighLightCharacterByPoint(ms.X, ms.Y);
-                if (ms.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed && _msLast.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Released)
+                if (!MainGame.IsEditorMode)
                 {
-                    if (ms.X >= 0 && ms.X <= CurrentScene.Viewport.Z && ms.Y >= 0 && ms.Y <= CurrentScene.Viewport.W)
+                    CurrentScene.HighLightCharacterByPoint(ms.X, ms.Y);
+                    if (ms.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed && _msLast.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Released)
                     {
-                        //
-                        if (CurrentScene.State == Scene.SceneState.Map)
+                        if (ms.X >= 0 && ms.X <= CurrentScene.Viewport.Z && ms.Y >= 0 && ms.Y <= CurrentScene.Viewport.W)
                         {
-                            if (clicktimer == null)
+                            if (CurrentScene.State == Scene.SceneState.Map)
                             {
-                                clicktimer = new HiPerfTimer();
-                                clicktimer.Start();
-                            }
-                            
-                            if (clicktimer.GetDuration() > 0.3 && (player.State == CharacterState.Idle || player.State == CharacterState.Moving))
-                            {
-                                int result = CurrentScene.SelectCharacter();
-                                if (result == 0)
+
+                                if (clicktimer == null)
                                 {
-                                    PreRenderEffect clickeffect = new PreRenderEffect("click", 128, 128);
-                                    clickeffect.Initialize(Content);
-                                    clickeffect.Layer = 4;
-                                    clickeffect.PlaySpeed = 3.0f;
-                                    clickeffect.Loop = false;
-                                    clickeffect.Position = new Vector2(CurrentScene.Viewport.X + ms.X, CurrentScene.Viewport.Y + ms.Y);
-                                    clickeffect.Play();
-                                    clickeffect.OnAnimationFini += new EventHandler(clickeffect_OnAnimationFini);
-                                    CurrentScene.AddRenderChunk(clickeffect);
-
-                                    //if (player.State == CharacterState.Idle)
-                                    //   player.State = CharacterState.Launch;
-                                    player.Target = new Vector2(CurrentScene.Viewport.X + ms.X, CurrentScene.Viewport.Y + ms.Y);
-                                    if (player.State == CharacterState.Idle)
-                                    {
-                                        player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                                        player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Target);
-                                        player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                                        player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
-                                        if (ClientID != 0)
-                                        {
-                                            player.StartMoveSyncTimer();
-                                            SendRequestMovementMsg(player);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (ClientID != 0)
-                                            SendTargetChangedMsg(player);
-                                        //player.AddActionSetPre("Moving", CharacterState.Moving, -1, CharacterActionSetChangeFactor.ArriveTarget);
-                                        //player.AddActionSet("Landing", CharacterState.Landing, -1, CharacterActionSetChangeFactor.AnimationCompleted);
-                                        //player.AddActionSet("Idle", CharacterState.Idle, -1, CharacterActionSetChangeFactor.AnimationCompleted);
-                                    }
-
-
-                                    if (!player.Interacting)
-                                        player.InteractiveTarget = null;
+                                    clicktimer = new HiPerfTimer();
+                                    clicktimer.Start();
                                 }
-                                else if (result == 1)
+
+                                clicktime = clicktimer.GetTotalDuration();
+
+                                if (clicktime > 0.3 && (player.State == CharacterState.Idle || player.State == CharacterState.Moving))
                                 {
-                                    //if (player.State == Character.CharacterState.Idle)
-                                    //   player.State = Character.CharacterState.Launch;
-                                    //player.Target = new Vector2(CurrentScene.Viewport.X + ms.X, CurrentScene.Viewport.Y + ms.Y);
-                                    //GameCursor.SetCursor(GameCursor.CursorType.Talk);
-                                    if (player.State == CharacterState.Idle)
+                                    clicktimer.Stop();
+                                    clicktimer.Start();
+                                    int result = CurrentScene.SelectCharacter();
+                                    if (result == 0)
                                     {
-                                        if (ClientID != 0)
+                                        PreRenderEffect clickeffect = new PreRenderEffect("click", 128, 128);
+                                        clickeffect.Initialize(Content);
+                                        clickeffect.Layer = 4;
+                                        clickeffect.PlaySpeed = 3.0f;
+                                        clickeffect.Loop = false;
+                                        clickeffect.Position = new Vector2(CurrentScene.Viewport.X + ms.X, CurrentScene.Viewport.Y + ms.Y);
+                                        clickeffect.Play();
+                                        clickeffect.OnAnimationFini += new EventHandler(clickeffect_OnAnimationFini);
+                                        CurrentScene.AddRenderChunk(clickeffect);
+
+                                        //if (player.State == CharacterState.Idle)
+                                        //   player.State = CharacterState.Launch;
+                                        player.Target = new Vector2(CurrentScene.Viewport.X + ms.X, CurrentScene.Viewport.Y + ms.Y);
+                                        if (player.State == CharacterState.Idle)
                                         {
-                                            player.StartMoveSyncTimer();
-                                            SendRequestMovementMsg(player);
+                                            player.AddActionSet("Launch", CharacterState.Launch, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                                            player.AddActionSet("Moving", CharacterState.Moving, CharacterActionSetChangeFactor.ArriveTarget, player.Target);
+                                            player.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
+                                            player.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.Immediate, null);
+                                            if (ClientID != 0)
+                                            {
+                                                player.StartMoveSyncTimer();
+                                                SendRequestMovementMsg(player);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (ClientID != 0)
+                                                SendTargetChangedMsg(player);
+                                            //player.AddActionSetPre("Moving", CharacterState.Moving, -1, CharacterActionSetChangeFactor.ArriveTarget);
+                                            //player.AddActionSet("Landing", CharacterState.Landing, -1, CharacterActionSetChangeFactor.AnimationCompleted);
+                                            //player.AddActionSet("Idle", CharacterState.Idle, -1, CharacterActionSetChangeFactor.AnimationCompleted);
+                                        }
+
+
+                                        if (!player.Interacting)
+                                            player.InteractiveTarget = null;
+                                    }
+                                    else if (result == 1)
+                                    {
+                                        //if (player.State == Character.CharacterState.Idle)
+                                        //   player.State = Character.CharacterState.Launch;
+                                        //player.Target = new Vector2(CurrentScene.Viewport.X + ms.X, CurrentScene.Viewport.Y + ms.Y);
+                                        //GameCursor.SetCursor(GameCursor.CursorType.Talk);
+                                        if (player.State == CharacterState.Idle)
+                                        {
+                                            if (ClientID != 0)
+                                            {
+                                                player.StartMoveSyncTimer();
+                                                SendRequestMovementMsg(player);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (ClientID != 0)
+                                                SendTargetChangedMsg(player);
                                         }
                                     }
-                                    else
+                                }
+                                else
+                                {
+                                    if ((player.State == CharacterState.Idle || player.State == CharacterState.Moving))
                                     {
-                                        if (ClientID != 0)
-                                            SendTargetChangedMsg(player);
+                                        int x = 0;
+                                        x++;
+                                        Debug.WriteLine("too fast to click");
                                     }
                                 }
                             }
@@ -575,18 +834,12 @@ namespace demo
                         {
                             CurrentScene.ConfirmOperateTarget();
                         }
-
-
                     }
-
                 }
-            }
-
-
-
+            }*/
+            //back input status
             _msLast = ms;
             _ksLast = ks;
-
         }
 
         protected void clickeffect_OnAnimationFini(object sender, EventArgs e)
@@ -600,8 +853,11 @@ namespace demo
         public void Debug_ClipScroll()
         {
             Vector4 vp = CurrentScene.Viewport;
-            vp.X = MathHelper.Clamp(vp.X, 0.0f, (GameConst.BackgroundScale) * 2048.0f - GameConst.ScreenWidth);
-            vp.Y = MathHelper.Clamp(vp.Y, 0.0f, (GameConst.BackgroundScale) * 2048.0f - GameConst.ScreenHeight);
+            //vp.X = MathHelper.Clamp(vp.X, 0.0f, (GameConst.BackgroundScale) * 2048.0f - GameConst.ScreenWidth);
+            //vp.Y = MathHelper.Clamp(vp.Y, 0.0f, (GameConst.BackgroundScale) * 2048.0f - GameConst.ScreenHeight);
+            vp.X = MathHelper.Clamp(vp.X, 0.0f, CurrentScene.ActualSize.Z);
+            vp.Y = MathHelper.Clamp(vp.Y, 0.0f, CurrentScene.ActualSize.W - GameConst.ScreenHeight);
+
             CurrentScene.Viewport = vp;
         }
     }

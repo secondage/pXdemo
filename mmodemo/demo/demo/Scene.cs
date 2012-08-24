@@ -15,6 +15,8 @@ using System.Xml;
 using System.Diagnostics;
 using demo.uicontrols;
 using System.Threading;
+using System.IO;
+using System.Windows.Forms;
 
 namespace demo
 {
@@ -164,11 +166,18 @@ namespace demo
         {
             for (int i = 0; i < renderchunks.Count; ++i)
             {
+                RenderChunk rc = renderchunks[i];
                 //if (rc is Background || rc is Cloud)
                 //    continue;
-                //if (rc is PreRenderEffect)
-                //    continue;
-                renderchunks[i].Render(sb);
+                /*if (rc is CharacterTitle)
+                    continue;
+                if (rc is Cloud)
+                    continue;
+                if (rc is CharacterPic)
+                    continue;
+                if (rc is PreRenderEffect)
+                    continue;*/
+                rc.Render(sb);
             }
 
 
@@ -326,13 +335,14 @@ namespace demo
             {
                 renderchunks.Add(rc);
                 rc.Scene = this;
+                SortRenderChunksByLayer();
             }
         }
 
         public Character GetCharacterByName(string name)
         {
             //fixme : modify to map
-            for (int i = 0 ; i < characters.Count ; ++i)
+            for (int i = 0; i < characters.Count; ++i)
             {
                 if (characters[i].Name == name)
                     return characters[i];
@@ -376,7 +386,7 @@ namespace demo
             if (netplayers.Count == 0)
                 return null;
             //fixme : modify to map
-            for(int i = 0 ; i < netplayers.Count ; ++i)
+            for (int i = 0; i < netplayers.Count; ++i)
             {
                 if (netplayers[i].ClientID == clientid)
                     return netplayers[i];
@@ -760,6 +770,81 @@ namespace demo
                     }
 
                 }
+
+                XmlNodeList hsdef = doc.GetElementsByTagName("HoverStoneDef", "");
+                for (int i = 0; i < hsdef[0].ChildNodes.Count; ++i)
+                {
+                    XmlNode node = hsdef[0].ChildNodes[i];
+                    if (node.Name == "HoverStone")
+                    {
+                        HoverStone hs = new HoverStone();
+                        for (int j = 0; j < node.ChildNodes.Count; ++j)
+                        {
+                            XmlNode an = node.ChildNodes[j];
+                            switch (an.Name)
+                            {
+                                case "Texture":
+                                    hs.TextureFileName = an.FirstChild.Value;
+                                    hs.Texture = GameConst.Content.Load<Texture2D>(@"stone/" + an.FirstChild.Value);
+                                    break;
+                                case "Position":
+                                    {
+                                        float x = 0, y = 0;
+                                        for (int k = 0; k < an.ChildNodes.Count; ++k)
+                                        {
+                                            XmlNode qn = an.ChildNodes[k];
+                                            if (qn.Name == "X")
+                                            {
+                                                x = (float)Convert.ToDouble(qn.FirstChild.Value);
+                                            }
+                                            else if (qn.Name == "Y")
+                                            {
+                                                y = (float)Convert.ToDouble(qn.FirstChild.Value);
+                                            }
+                                        }
+                                        hs.Position = new Vector2(x, y);
+                                        break;
+                                    }
+                                case "Layer":
+                                    {
+                                        hs.Layer = Convert.ToInt32(an.FirstChild.Value);
+                                        break;
+                                    }
+                                case "Size":
+                                    {
+                                        float x = 0, y = 0;
+                                        for (int k = 0; k < an.ChildNodes.Count; ++k)
+                                        {
+                                            XmlNode qn = an.ChildNodes[k];
+                                            if (qn.Name == "X")
+                                            {
+                                                x = (float)Convert.ToDouble(qn.FirstChild.Value);
+                                            }
+                                            else if (qn.Name == "Y")
+                                            {
+                                                y = (float)Convert.ToDouble(qn.FirstChild.Value);
+                                            }
+                                        }
+                                        hs.Size = new Vector2(x, y);
+                                        break;
+                                    }
+                                case "Range":
+                                    {
+                                        hs.AMP = (float)Convert.ToDouble(an.FirstChild.Value);
+                                        break;
+                                    }
+                                case "CycleTime":
+                                    {
+                                        hs.TimeOfCycle = (float)Convert.ToDouble(an.FirstChild.Value);
+                                        break;
+                                    }
+                            }
+                        }
+                        AddRenderChunk(hs);
+                    }
+                }
+
+
                 stream.Close();
                 stream.Dispose();
 
@@ -1205,8 +1290,8 @@ namespace demo
                 }
                 localplayer.Position = new Vector2(localplayer.Position.X, localplayer.Picture.FrameSize.Y + viewport.Y);
                 for (int i = 0; i < battlecharacters.Count; ++i)
-                 {
-                     if (battlecharacters[i].TemplateID == 3)
+                {
+                    if (battlecharacters[i].TemplateID == 3)
                     {
                         battlecharacters[i].Position = new Vector2(battlecharacters[i].Position.X,
                                                                 GameConst.ScreenHeight - battlecharacters[i].Picture.FrameSize.Y * 0.5f + viewport.Y);
@@ -1448,7 +1533,7 @@ namespace demo
                         localplayer.AddActionSet("Landing", CharacterState.Landing, CharacterActionSetChangeFactor.AnimationCompleted, null);
                         localplayer.AddActionSet("Idle", CharacterState.Idle, CharacterActionSetChangeFactor.AnimationCompleted, null);
                         localplayer.InteractiveTarget = _hostCharacter;
-                        
+
                     }
                     return 1;
                 }
@@ -1456,6 +1541,216 @@ namespace demo
             return 0;
         }
 
+        private void SaveHoverStones()
+        {
+            //System.IO.Stream stream = TitleContainer.OpenStream(name + ".xml");
+            try
+            {
+                FileStream streamread = new FileStream(name + ".xml", FileMode.Open);
+                if (streamread != null)
+                {
+                    XmlDocument doc = new XmlDocument();
+                    doc.Load(streamread);
+                    streamread.Close();
+                    streamread.Dispose();
+                    FileStream streamwrite = new FileStream(name + ".xml", FileMode.Create);
+                    if (streamwrite != null)
+                    {
+                        XmlNodeList constdef = doc.GetElementsByTagName("HoverStoneDef", "");
+                        if (constdef.Count > 0)
+                        {
+                            constdef[0].RemoveAll();
+                            for (int i = 0; i < renderchunks.Count; ++i)
+                            {
+
+                                if (renderchunks[i] is HoverStone)
+                                {
+                                    HoverStone rc = renderchunks[i] as HoverStone;
+                                    XmlElement xe = doc.CreateElement("HoverStone");
+                                    XmlElement etexturename = doc.CreateElement("Texture");
+                                    etexturename.InnerText = "stone1";
+                                    xe.AppendChild(etexturename);
+
+                                    XmlElement epos = doc.CreateElement("Position");
+                                    XmlElement eposx = doc.CreateElement("X");
+                                    eposx.InnerText = rc.Position.X.ToString();
+                                    XmlElement eposy = doc.CreateElement("Y");
+                                    eposy.InnerText = rc.Position.Y.ToString();
+                                    epos.AppendChild(eposx);
+                                    epos.AppendChild(eposy);
+                                    xe.AppendChild(epos);
+
+                                    XmlElement elayer = doc.CreateElement("Layer");
+                                    elayer.InnerText = rc.Layer.ToString();
+                                    xe.AppendChild(elayer);
+
+                                    XmlElement esize = doc.CreateElement("Size");
+                                    XmlElement esizex = doc.CreateElement("X");
+                                    esizex.InnerText = rc.Size.X.ToString();
+                                    XmlElement esizey = doc.CreateElement("Y");
+                                    esizey.InnerText = rc.Size.Y.ToString();
+                                    esize.AppendChild(esizex);
+                                    esize.AppendChild(esizey);
+                                    xe.AppendChild(esize);
+
+                                    XmlElement erange = doc.CreateElement("Range");
+                                    erange.InnerText = rc.AMP.ToString();
+                                    xe.AppendChild(erange);
+
+                                    XmlElement ectime = doc.CreateElement("CycleTime");
+                                    ectime.InnerText = rc.TimeOfCycle.ToString();
+                                    xe.AppendChild(ectime);
+
+                                    constdef[0].AppendChild(xe);
+                                }
+                            }
+                        }
+                        doc.Save(streamwrite);
+                        streamwrite.Close();
+                        streamwrite.Dispose();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("SaveHoverStones Failed : " + e.Message);
+            }
+
+            // XmlNodeList hsdef = doc.GetElementsByTagName("HoverStoneDef", "");
+
+        }
+
+        public void DoEditorMenu(int x, int y, bool showit)
+        {
+            if (!showit)
+            {
+                UIDialog dialoge = UIMgr.GetUIControlByName("editorcontextmenu") as UIDialog;
+                if (dialoge != null)
+                {
+                    dialoge.State = RenderChunk.RenderChunkState.Delete;
+                }
+                return;
+            }
+
+            UIDialog dialog = UIMgr.GetUIControlByName("editorcontextmenu") as UIDialog;
+            if (dialog == null)
+            {
+                dialog = UIMgr.AddUIControl("UIDialog", "editorcontextmenu", x + 20, y, 70, 100, -1, 99, this) as UIDialog;
+            }
+            else
+            {
+                dialog.Position = new Vector2(x + 20, y);
+                dialog.RemoveUIControl("delbtn");
+                dialog.RemoveUIControl("addbtn");
+                if (_hostChunk != null)
+                {
+                    UITextButton btn = UIMgr.CreateUIControl("UITextButton") as UITextButton;
+                    if (btn != null)
+                    {
+                        btn.Text = "删除";
+                        btn.FontColor = Color.DeepSkyBlue;
+                        dialog.AddUIControl(btn, "delbtn", 2, 2, 66, 20, -1, this);
+                    }
+                }
+                else
+                {
+                    UITextButton btn = UIMgr.CreateUIControl("UITextButton") as UITextButton;
+                    if (btn != null)
+                    {
+                        btn.Text = "新建";
+                        btn.FontColor = Color.DeepSkyBlue;
+                        dialog.AddUIControl(btn, "addbtn", 2, 2, 66, 20, -1, this);
+                    }
+                }
+                return;
+            }
+            if (dialog != null)
+            {
+                if (_hostChunk != null)
+                {
+                    UITextButton btn = dialog.GetUIControlByName("delbtn") as UITextButton;
+                    if (btn == null)
+                    {
+                        btn = UIMgr.CreateUIControl("UITextButton") as UITextButton;
+                    }
+                    if (btn != null)
+                    {
+                        btn.Text = "删除";
+                        btn.FontColor = Color.DeepSkyBlue;
+                        dialog.AddUIControl(btn, "delbtn", 2, 2, 66, 20, -1, this);
+                    }
+                }
+                else
+                {
+                    UITextButton btn = dialog.GetUIControlByName("addbtn") as UITextButton;
+                    if (btn == null)
+                    {
+                        btn = UIMgr.CreateUIControl("UITextButton") as UITextButton;
+                    }
+                    if (btn != null)
+                    {
+                        btn.Text = "新建";
+                        btn.FontColor = Color.DeepSkyBlue;
+                        dialog.AddUIControl(btn, "addbtn", 2, 2, 66, 20, -1, this);
+                    }
+                }
+            }
+        }
+
+        protected void delbtn_OnClick(object sender, MouseEventArgs e)
+        {
+            UITextButton btn = sender as UITextButton;
+            btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
+            if (_hostChunk != null)
+            {
+                _hostChunk.State = RenderChunk.RenderChunkState.Delete;
+            }
+        }
+
+        protected void addbtn_OnClick(object sender, MouseEventArgs e)
+        {
+            UITextButton btn = sender as UITextButton;
+            btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
+            HoverStone hs = new HoverStone();
+            hs.TextureFileName = "stone1";
+            hs.Texture = GameConst.Content.Load<Texture2D>(@"stone/stone1");
+            hs.Position = new Vector2(viewport.X + e.X, viewport.Y + e.Y);
+            hs.Layer = Convert.ToInt32(random.Next(18,22));
+            hs.Size = new Vector2(1, 1);
+            hs.AMP = 10;
+            hs.TimeOfCycle = 2;
+            AddRenderChunk(hs);
+        }
+
+        public void EditorOperate(MainGame.EditorOp op, int x, int y)
+        {
+            switch (op)
+            {
+                case MainGame.EditorOp.Move:
+                    if (_hostChunk != null)
+                    {
+                        _hostChunk.Position = new Vector2(viewport.X + x, viewport.Y + y);
+                    }
+                    break;
+                case MainGame.EditorOp.Scale:
+                    {
+                        if (_hostChunk != null)
+                        {
+                            Vector2 s = _hostChunk.Size;
+                            float f = Math.Max(x, y);
+                            //Log.WriteLine(x.ToString());
+                            s += new Vector2(f * 0.01f, f * 0.01f);
+                            s.X = MathHelper.Clamp(s.X, 0.5f, 10.0f);
+                            s.Y = MathHelper.Clamp(s.Y, 0.5f, 10.0f);
+                            _hostChunk.Size = s;
+                        }
+                    }
+                    break;
+                case MainGame.EditorOp.Save:
+                    SaveHoverStones();
+                    break;
+            }
+        }
 
         public void ConfirmOperateTarget()
         {
@@ -1468,6 +1763,45 @@ namespace demo
                 _hostCharacter.Picture.HighLight = false;
                 _hostCharacter = null;
                 localplayer.CloseBattleMenu();
+            }
+        }
+
+
+        RenderChunk _hostChunk = null;
+        public void HighLightChunkByPoint(int _x, int _y)
+        {
+            int x = _x + (int)viewport.X;
+            int y = _y + (int)viewport.Y;
+            RenderChunk host = null;
+            for (int i = 0; i < renderchunks.Count; ++i)
+            {
+                RenderChunk rc = renderchunks[i];
+                if (!(rc is HoverStone))
+                    continue;
+                Rectangle rect = new Rectangle((int)(rc.Position.X - rc.FrameSize.X * 0.3f),
+                                                (int)(rc.Position.Y - rc.FrameSize.Y * 0.3f),
+                                                (int)(rc.FrameSize.X * 0.6f),
+                                                (int)(rc.FrameSize.Y * 0.6f));
+                if (rect.Contains(new Point(x, y)))
+                {
+                    host = rc;
+                    break;
+                }
+            }
+            if (host != null)
+            {
+                if (_hostCharacter != null)
+                    _hostCharacter.Picture.HighLight = false;
+                host.HighLight = true;
+                _hostChunk = host;
+            }
+            else
+            {
+                if (_hostChunk != null)
+                {
+                    _hostChunk.HighLight = false;
+                    _hostChunk = null;
+                }
             }
         }
 
@@ -1580,7 +1914,7 @@ namespace demo
                 //generate texture id
                 Texture2D tex = texarray[random.Next(texarray.Length)];
                 //generate layer
-                int layer = random.Next(15, 30);
+                int layer = random.Next(5, 30);
 
                 Cloud cloud = new Cloud(tex, layer);
 

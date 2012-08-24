@@ -146,9 +146,11 @@ namespace demo
             Vector2 pos = Position;
             if (coordsystem == CoordinateSystemType.World)
             {
-                pos.X -= Scene.Viewport.X * (1.0f - (float)layer / 5.0f * 0.2f);
-                pos.Y -= Scene.Viewport.Y;
-
+               // pos.X -= Scene.Viewport.X * (1.0f - (float)layer / 5.0f * 0.2f);
+                //pos.Y -= Scene.Viewport.Y;
+                pos = Vector2.Zero;
+                scroll.X = (int)(Scene.Viewport.X * ((float)layer / 5.0f * 6.2f) / Size.X);
+                scroll.Y = (int)(Scene.Viewport.Y / Size.Y) ;
             }
             
             if (autoscroll && autoscrollloop)
@@ -159,7 +161,13 @@ namespace demo
             if (autoscroll)
                 sb.Draw(Texture, pos, scroll, this.Color, 0.0f, Vector2.Zero, Size, SpriteEffects.None, 0.0f);
             else
-                sb.Draw(Texture, pos, null, this.Color, 0.0f, Vector2.Zero, Size, SpriteEffects.None, 0.0f);
+            {
+                sb.End();
+                sb.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, SamplerState.LinearWrap, DepthStencilState.Default, RasterizerState.CullCounterClockwise);
+                sb.Draw(Texture, pos, scroll, this.Color, 0.0f, Vector2.Zero, Size, SpriteEffects.None, 0.0f);
+                sb.End();
+                sb.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
+            }
             if (autoscroll && autoscrollloop)
             {
                 sb.End();

@@ -11,6 +11,7 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using System.Windows.Forms;
 
 
 namespace demo.uicontrols
@@ -41,7 +42,7 @@ namespace demo.uicontrols
         }
 
 
-        public event EventHandler OnClick;
+        public event MouseEventHandler OnClick;
      
         public override void Update(GameTime gametime)
         {
@@ -135,7 +136,7 @@ namespace demo.uicontrols
                         {
                             if (OnClick != null)
                             {
-                                OnClick(this, new EventArgs());
+                                OnClick(this, new MouseEventArgs(MouseButtons.Left, 1, (int)p1, (int)p2, 0));
                             }
                             result++;
                         }

@@ -3871,6 +3871,14 @@ with.
         <Start>攻</Start>
         <End>攻</End>
       </CharacterRegion>
+      <CharacterRegion>
+        <Start>删</Start>
+        <End>删</End>
+      </CharacterRegion>
+      <CharacterRegion>
+        <Start>除</Start>
+        <End>除</End>
+      </CharacterRegion>
     </CharacterRegions>
 
   </Asset>

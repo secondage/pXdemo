@@ -11,6 +11,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using demo.uicontrols;
+using System.Windows.Forms;
 
 namespace demo
 {
@@ -59,8 +60,8 @@ namespace demo
             float x = position.X - vp.Z * 0.5f;
             float y = position.Y - vp.W * 0.5f;
 
-            x = MathHelper.Clamp(x, 0.0f, (GameConst.BackgroundScale) * 2048.0f - GameConst.ScreenWidth);
-            y = MathHelper.Clamp(y, 0.0f, (GameConst.BackgroundScale) * 2048.0f - GameConst.ScreenHeight);
+            x = MathHelper.Clamp(x, 0.0f, scene.ActualSize.Z);
+            y = MathHelper.Clamp(y, 0.0f, scene.ActualSize.W - GameConst.ScreenHeight);
 
             scene.SetViewportPos(x, y);
         }
@@ -68,7 +69,6 @@ namespace demo
 
         private void UpdateQuestTrack(Quest q)
         {
-
             UIElement trackd = UIMgr.GetUIControlByName("dlg_questtrck");
             if (trackd != null)
             {
@@ -88,7 +88,6 @@ namespace demo
                     t.Text = q.Script.GetTrackString(0);
                 }
             }
-
         }
 
 
@@ -277,7 +276,7 @@ namespace demo
         }
 
 
-        protected void atkbtn_OnClick(object sender, EventArgs e)
+        protected void atkbtn_OnClick(object sender, MouseEventArgs e)
         {
             UITextButton btn = sender as UITextButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
@@ -285,7 +284,7 @@ namespace demo
 
         }
 
-        protected void magbtn_OnClick(object sender, EventArgs e)
+        protected void magbtn_OnClick(object sender, MouseEventArgs e)
         {
             UITextButton btn = sender as UITextButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
@@ -293,7 +292,7 @@ namespace demo
 
         }
 
-        protected void itembtn_OnClick(object sender, EventArgs e)
+        protected void itembtn_OnClick(object sender, MouseEventArgs e)
         {
             UITextButton btn = sender as UITextButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
@@ -530,7 +529,7 @@ namespace demo
             interactivetarget = null;
         }
 
-        protected void okbtn_OnClick(object sender, EventArgs e)
+        protected void okbtn_OnClick(object sender, MouseEventArgs e)
         {
             UITextButton btn = sender as UITextButton;
             Quest q = btn.UserData as Quest;
@@ -581,7 +580,7 @@ namespace demo
 
         }
 
-        protected void cancelbtn_OnClick(object sender, EventArgs e)
+        protected void cancelbtn_OnClick(object sender, MouseEventArgs e)
         {
             UITextButton btn = sender as UITextButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;

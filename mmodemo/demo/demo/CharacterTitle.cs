@@ -142,11 +142,11 @@ namespace demo
             
             pos.X -= namestringmeasure.X * 0.5f;
             pos.Y -= namestringmeasure.Y * 0.5f;
-            //sb.End();
-            //sb.Begin();
+            sb.End();
+            sb.Begin();
             sb.DrawString(font, namestring, pos, this.Color);
-            //sb.End();
-            //sb.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
+            sb.End();
+            sb.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
 
             Vector2 poshp = new Vector2(pos.X, pos.Y + 30.0f);
            

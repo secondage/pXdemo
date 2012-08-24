@@ -8,18 +8,11 @@
     <anims>
       <Item>
         <name>Idle</name>
-        <framecount>10</framecount>
+        <framecount>9</framecount>
         <eventframe>-1</eventframe>
         <speed>1.0</speed>
         <loop>true</loop>
         <frames>
-          <Item>
-            <x>600</x>
-            <y>900</y>
-            <w>300</w>
-            <h>150</h>
-            <center>center</center>
-          </Item>
           <Item>
             <x>900</x>
             <y>900</y>

@@ -49,8 +49,6 @@ namespace demo
             //Rectangle dest = new Rectangle(Position.X, Position.Y, Size.X, Size.Y);
             if (state == RenderChunkState.Hide || state == RenderChunkState.Invisible)
                 return;
-            SpriteEffects se = new SpriteEffects();
-
             Vector2 pos = Position;
             pos.X -= Scene.Viewport.X;
             pos.Y -= Scene.Viewport.Y;
@@ -60,7 +58,7 @@ namespace demo
             if (!n.Intersects(p))
                 return;
 
-            sb.Draw(texture, pos, null, this.Color, 0.0f, Vector2.Zero, Size, se, 0.0f);
+            sb.Draw(texture, pos, null, this.Color, 0.0f, Vector2.Zero, Size, SpriteEffects.None, 0.0f);
 
             base.Render(sb);
         }

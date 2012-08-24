@@ -79,7 +79,7 @@ namespace demo.uicontrols
             }
             set
             {
-               userdata = value;
+                userdata = value;
             }
         }
 
@@ -164,11 +164,11 @@ namespace demo.uicontrols
                     controlrect.X = (int)position.X;
                     controlrect.Y = (int)position.Y;
                 }
-                foreach (UIElement e in childs)
+                for(int i = 0 ; i <childs.Count ; ++i)
                 {
-                    e.Position = e.position;
+                    childs[i].Position = childs[i].position;
                 }
-               
+
             }
         }
 
@@ -334,10 +334,10 @@ namespace demo.uicontrols
             }
         }
 
-        
+
         public override void Update(GameTime gametime)
         {
-   
+
             if (sizedirty)
             {
                 CalculateSize();
@@ -349,12 +349,12 @@ namespace demo.uicontrols
                 if (lifetime < 0)
                     State = RenderChunkState.FadeOutToDel;
             }
-            foreach (UIElement e in childs)
+            for (int i = 0; i < childs.Count; ++i)
             {
-                e.Update(gametime);
-               
+                childs[i].Update(gametime);
+
             }
-           
+
             base.Update(gametime);
         }
 
@@ -367,9 +367,9 @@ namespace demo.uicontrols
             pos.Y = controlrect.Y;
             sb.Draw(Texture, pos, srcrect, this.Color, 0, Vector2.Zero, Size, SpriteEffects.None, 0.0f);
 
-            foreach (UIElement e in childs)
+            for (int i = 0; i < childs.Count; ++i)
             {
-                e.Render(sb);
+                childs[i].Render(sb);
             }
             base.Render(sb);
         }
@@ -406,8 +406,6 @@ namespace demo.uicontrols
             {
                 AddChild(UIMgr.CreateUIControl(t));
             }
-
-            //x += "xx";
         }
 
         public void RemoveUIControl(string name)
@@ -467,7 +465,7 @@ namespace demo.uicontrols
                     }
                     catch
                     {
-
+                        Log.WriteLine(string.Format("UI Command [{0:s}] not found.", mname));
                     }
                 }
 
@@ -492,7 +490,7 @@ namespace demo.uicontrols
                     }
                     catch
                     {
-                        Log.WriteLine("UI Command not found.");
+                        Log.WriteLine(string.Format("UI Command [{0:s}] not found.", mname));
                     }
                 }
 
@@ -509,9 +507,9 @@ namespace demo.uicontrols
         public virtual int HandleMessage(UIMessage msg, object p1, object p2)
         {
             int result = 0;
-            foreach(UIElement e in childs)
+            for (int i = 0; i < childs.Count; ++i)
             {
-                result += e.HandleMessage(msg, p1, p2);
+                result += childs[i].HandleMessage(msg, p1, p2);
             }
             return result;
         }
@@ -519,9 +517,9 @@ namespace demo.uicontrols
         protected sealed override void OnChangeState(RenderChunkState state)
         {
             base.OnChangeState(state);
-            foreach (UIElement e in childs)
+            for (int i = 0; i < childs.Count; ++i)
             {
-                e.State = state;
+                childs[i].State = state;
             }
         }
 
@@ -536,7 +534,7 @@ namespace demo.uicontrols
 
         public void Dispose()
         {
-            
+           // State = RenderChunkState.Delete;
         }
     }
 }

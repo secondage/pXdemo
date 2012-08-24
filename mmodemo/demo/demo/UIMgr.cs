@@ -44,10 +44,6 @@ namespace demo
     }
     public class UIMgr
     {
-
-
-
-
         static private Texture2D controlstexture;
         static private List<UIElement> renderlist = new List<UIElement>();
         static Dictionary<string, UIElement> controls = new Dictionary<string, UIElement>();
@@ -138,14 +134,12 @@ namespace demo
                 renderlist.Add(e);
                 renderlist.Sort();
             }
-            catch(NullReferenceException)
+            catch (NullReferenceException)
             {
 
             }
         }
 
-
-      
         static public UIElement AddUIControl(string tmpname, string name, int x, int y, int w, int h, double dur, int layer, object r)
         {
             if (controls.ContainsKey(name))
@@ -200,8 +194,9 @@ namespace demo
         static public void Update(GameTime gametime)
         {
             _removelist.Clear();
-            foreach (UIElement rc in renderlist)
+            for (int i = 0; i < renderlist.Count; ++i)
             {
+                UIElement rc = renderlist[i];
                 if (rc.State == RenderChunk.RenderChunkState.Delete)
                 {
                     _removelist.Add(rc);
@@ -220,8 +215,9 @@ namespace demo
 
         static public void Render(SpriteBatch sb)
         {
-            foreach (UIElement rc in renderlist)
+            for (int i = 0; i < renderlist.Count; ++i)
             {
+                UIElement rc = renderlist[i];
                 rc.Render(sb);
             }
         }

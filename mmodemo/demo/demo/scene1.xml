@@ -27,7 +27,7 @@
       <Name>npc2</Name>
       <Hp>100</Hp>
       <ScreenX>3000</ScreenX>
-      <ScreenY>4000</ScreenY>
+      <ScreenY>2000</ScreenY>
       <Layer>15</Layer>
       <Picture>char1</Picture>
       <Speed>0</Speed>
@@ -43,4 +43,20 @@
       <Visible>False</Visible>
     </Npc>
   </NpcDef>
+  <HoverStoneDef>
+    <HoverStone>
+      <Texture>stone1</Texture>
+      <Position>
+        <X>200</X>
+        <Y>200</Y>
+      </Position>
+      <Layer>20</Layer>
+      <Size>
+        <X>2</X>
+        <Y>2</Y>
+      </Size>
+      <Range>10</Range>
+      <CycleTime>2</CycleTime>
+    </HoverStone>
+  </HoverStoneDef>
 </SceneDef>

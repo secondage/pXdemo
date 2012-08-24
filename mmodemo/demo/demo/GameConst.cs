@@ -14,7 +14,7 @@ namespace demo
         static private int screenWidth = 1024;
         static private int screenHeight = 768;
         static private float scrollSpeed = 20.0f;
-        static private float backgroundScale = 3.0f;
+        static private float backgroundScale = 1.5f;
         static private float distanceFactor = 15.0f;
         static private Vector2 nametitleoffset = new Vector2(0, 7.0f);
         static private GraphicsDeviceManager graphics;

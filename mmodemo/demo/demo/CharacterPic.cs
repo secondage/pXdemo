@@ -25,7 +25,7 @@ namespace demo
         private float originangle = 0.0f;
         private bool hover = false;
         private RenderChunk child;
-        private bool highlight;
+      
 
         private Dictionary<string, Texture2D> animTextures = new Dictionary<string, Texture2D>();
 
@@ -138,18 +138,7 @@ namespace demo
             }
         }
 
-        public bool HighLight
-        {
-            get
-            {
-                return highlight;
-            }
-            set
-            {
-                highlight = value;
-            }
-        }
-
+       
         public int OriginDir
         {
             set
@@ -257,7 +246,7 @@ namespace demo
             sb.Draw(animTextures[currentAnim.Name], 
                 pos, 
                 currentAnim.CurrentRect, 
-                highlight ? Color.Red : this.Color, 
+                HighLight ? Color.Red : this.Color, 
                 angle, currentAnim.CurrentOrigin, 
                 Size, 
                 dir.X < 0 ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 
