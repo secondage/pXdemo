@@ -11,6 +11,7 @@ namespace demo
         public static void WriteLine(string line)
         {
             Debug.WriteLine(line);
+            Console.WriteLine(line);
         }
     }
 }

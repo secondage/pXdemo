@@ -177,6 +177,8 @@ namespace demo
                     continue;
                 if (rc is PreRenderEffect)
                     continue;*/
+                if (rc.SkipRender())
+                    continue;
                 rc.Render(sb);
             }
 

@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<XnaContent>
+  <Asset Type="ProjectMercury.ParticleEffect">
+    <Name Null="true" />
+    <Author Null="true" />
+    <Description Null="true" />
+    <Emitters>
+      <Item Type="ProjectMercury.Emitters.ConeEmitter">
+        <Name>Emitter 3</Name>
+        <Budget>1000</Budget>
+        <Term>3</Term>
+        <ReleaseQuantity>1</ReleaseQuantity>
+        <Enabled>true</Enabled>
+        <ReleaseSpeed>[70,100]</ReleaseSpeed>
+        <ReleaseColour>
+          <Red>[1,1]</Red>
+          <Green>[1,1]</Green>
+          <Blue>[1,1]</Blue>
+        </ReleaseColour>
+        <ReleaseOpacity>[1,1]</ReleaseOpacity>
+        <ReleaseScale>[16,16]</ReleaseScale>
+        <ReleaseRotation>
+          <Pitch>[0,0]</Pitch>
+          <Yaw>[0,0]</Yaw>
+          <Roll>[0,0]</Roll>
+        </ReleaseRotation>
+        <ParticleTextureAssetPath>Cloud001</ParticleTextureAssetPath>
+        <BlendMode>Alpha</BlendMode>
+        <Direction>1</Direction>
+        <ConeAngle>0.9</ConeAngle>
+        <Modifiers>
+          <Modifier Type="ProjectMercury.Modifiers.OpacityFastFadeModifier">
+            <InitialOpacity>1</InitialOpacity>
+          </Modifier>
+          <Modifier Type="ProjectMercury.Modifiers.LinearGravityModifier">
+            <GravityVector>1 -1 0</GravityVector>
+            <Strength>150</Strength>
+          </Modifier>
+          <Modifier Type="ProjectMercury.Modifiers.ScaleInterpolator2">
+            <InitialScale>32</InitialScale>
+            <FinalScale>256</FinalScale>
+          </Modifier>
+          <Modifier Type="ProjectMercury.Modifiers.RotationModifier">
+            <RotationRate>0 0 1.5</RotationRate>
+          </Modifier>
+        </Modifiers>
+        <Controllers />
+      </Item>
+      <Item Type="ProjectMercury.Emitters.ConeEmitter">
+        <Name>Emitter 9</Name>
+        <Budget>1000</Budget>
+        <Term>2</Term>
+        <ReleaseQuantity>1</ReleaseQuantity>
+        <Enabled>true</Enabled>
+        <ReleaseSpeed>[70,70]</ReleaseSpeed>
+        <ReleaseColour>
+          <Red>[1,1]</Red>
+          <Green>[1,1]</Green>
+          <Blue>[1,1]</Blue>
+        </ReleaseColour>
+        <ReleaseOpacity>[0.1,0.4]</ReleaseOpacity>
+        <ReleaseScale>[16,16]</ReleaseScale>
+        <ReleaseRotation>
+          <Pitch>[0,0]</Pitch>
+          <Yaw>[0,0]</Yaw>
+          <Roll>[0,3.14]</Roll>
+        </ReleaseRotation>
+        <ParticleTextureAssetPath>Cloud003</ParticleTextureAssetPath>
+        <BlendMode>Alpha</BlendMode>
+        <Direction>1</Direction>
+        <ConeAngle>0.9</ConeAngle>
+        <Modifiers>
+          <Modifier Type="ProjectMercury.Modifiers.LinearGravityModifier">
+            <GravityVector>1 -0.8 0</GravityVector>
+            <Strength>100</Strength>
+          </Modifier>
+          <Modifier Type="ProjectMercury.Modifiers.ScaleInterpolator2">
+            <InitialScale>70</InitialScale>
+            <FinalScale>300</FinalScale>
+          </Modifier>
+          <Modifier Type="ProjectMercury.Modifiers.OpacityFastFadeModifier">
+            <InitialOpacity>0.5</InitialOpacity>
+          </Modifier>
+        </Modifiers>
+        <Controllers />
+      </Item>
+    </Emitters>
+  </Asset>
+</XnaContent>

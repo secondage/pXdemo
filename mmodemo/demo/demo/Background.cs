@@ -149,7 +149,9 @@ namespace demo
                // pos.X -= Scene.Viewport.X * (1.0f - (float)layer / 5.0f * 0.2f);
                 //pos.Y -= Scene.Viewport.Y;
                 pos = Vector2.Zero;
-                scroll.X = (int)(Scene.Viewport.X * ((float)layer / 5.0f * 6.2f) / Size.X);
+                //scroll.X = (int)(Scene.Viewport.X * ((float)layer) / Size.X);
+                //scroll.Y = (int)(Scene.Viewport.Y / Size.Y) ;
+                scroll.X = (int)(Scene.Viewport.X * ((float)layer / 3) / Size.X);
                 scroll.Y = (int)(Scene.Viewport.Y / Size.Y) ;
             }
             
@@ -163,7 +165,10 @@ namespace demo
             else
             {
                 sb.End();
-                sb.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, SamplerState.LinearWrap, DepthStencilState.Default, RasterizerState.CullCounterClockwise);
+                if (texture.Width == texture.Height)
+                    sb.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, SamplerState.LinearWrap, DepthStencilState.Default, RasterizerState.CullCounterClockwise);
+                else
+                    sb.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullCounterClockwise);
                 sb.Draw(Texture, pos, scroll, this.Color, 0.0f, Vector2.Zero, Size, SpriteEffects.None, 0.0f);
                 sb.End();
                 sb.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);

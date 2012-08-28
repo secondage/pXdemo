@@ -272,6 +272,16 @@ namespace demo
             }
         }
 
+        public bool SkipRender()
+        {
+            for (int i = 0; i < GameConst.SkipRenderTypeList.Length; ++i)
+            {
+                if (this.GetType() == GameConst.SkipRenderTypeList[i])
+                    return true;
+            }
+            return false;
+        }
+
         private void UpdateStateAnimation(GameTime gametime)
         {
             switch (state)

@@ -12,6 +12,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using demo.uicontrols;
 using System.Windows.Forms;
+using ProjectMercury;
 
 namespace demo
 {
@@ -22,11 +23,11 @@ namespace demo
         {
             atk = 134;
             def = 22;
+            TrailParticle = null;
         }
 
-
-        
-
+        public ParticleEffect TrailParticle { get; set; }
+    
         Dictionary<int, Quest> quests = new Dictionary<int, Quest>();
         Dictionary<int, Quest> quests_completed = new Dictionary<int, Quest>();
 
@@ -118,6 +119,13 @@ namespace demo
         public override void Update(GameTime gametime)
         {
             base.Update(gametime);
+            if (TrailParticle != null && this.State == CharacterState.Moving)
+            {
+                Vector2 dir = target - position;
+                dir.Normalize();
+                Vector3 p3 = new Vector3(Position.X - (dir.X * Picture.FrameSize.X * 0.1f), Position.Y, 0) ;
+                TrailParticle.Trigger(ref p3);
+            }
             foreach (KeyValuePair<int, Quest> q in quests_completed)
             {
                 foreach (Npc npc in visiblenpcs)
@@ -133,6 +141,7 @@ namespace demo
                     visiblenpcs.Remove(npc);
                 }
                 _removenpclist.Clear();
+               
             }
 
             foreach (KeyValuePair<int, Quest> q in quests)

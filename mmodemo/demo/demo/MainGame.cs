@@ -20,6 +20,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Xml;
 using System.Diagnostics;
+using ProjectMercury;
+using ProjectMercury.Renderers;
 
 namespace demo
 {
@@ -51,6 +53,7 @@ namespace demo
         private static TcpChannel clientchannel;
         private LoginDialog dlgLogin;
         private long ClientID;
+        private SpriteBatchRenderer spritebatchrenderer;
         private bool ContentLoadCompleted = false;
 
         public static bool IsEditorMode { get; set; }
@@ -124,7 +127,7 @@ namespace demo
 
                        clicktime = clicktimer.GetTotalDuration();
 
-                       if (clicktime > 0.3 && (player.State == CharacterState.Idle || player.State == CharacterState.Moving))
+                       if (clicktime > 0.2 && (player.State == CharacterState.Idle || player.State == CharacterState.Moving))
                        {
                            clicktimer.Stop();
                            clicktimer.Start();
@@ -222,6 +225,9 @@ namespace demo
                 {
                     CurrentScene.EditorOperate(EditorOp.Move, args.X, args.Y);
                     CurrentScene.HighLightChunkByPoint(args.X, args.Y);
+
+                    Vector3 p = new Vector3(args.X, args.Y, 0);
+                    pe.Trigger(ref p);
                 }
                 else
                 {
@@ -338,10 +344,19 @@ namespace demo
         /// LoadContent will be called once per game and is the place to load
         /// all of your content.
         /// </summary>
+
+        ParticleEffect pe;
         protected override void LoadContent()
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            //spritebatchrenderer = new SpriteBatchRenderer();
+            spritebatchrenderer = new SpriteBatchRenderer
+            {
+                GraphicsDeviceService = this.graphics,
+                Transformation = Matrix.CreateTranslation(0, 0, 1f)
+            }; 
 
             GraphicsDevice.ScissorRectangle = new Rectangle(0, 0, GameConst.ScreenWidth, GameConst.ScreenHeight);
             var source = new CancellationTokenSource();
@@ -386,9 +401,19 @@ namespace demo
                         CurrentScene.InitMiniMap(texminimap, texminimapchar, texmapmask, 0, GameConst.ScreenHeight - 256, 256, 256);
 
                         CharacterTitle.BlockTexture = Content.Load<Texture2D>(@"effect/block");
-                        UIMgr.AddUIControl("Dialog_Leader", "leader_dlg", (int)UILayout.Right, (int)UILayout.Top, 0, 0, -1, 99, this);
+                        //UIMgr.AddUIControl("Dialog_Leader", "leader_dlg", (int)UILayout.Right, (int)UILayout.Top, 0, 0, -1, 99, this);
                         CurrentScene.GenerateClouds(cloudTextureArray);
                         CurrentScene.SortRenderChunksByLayer();
+
+                        spritebatchrenderer.GraphicsDeviceService = this.graphics;
+                        spritebatchrenderer.LoadContent(null);
+                        pe = GameConst.Content.Load<ParticleEffect>(@"particles/magictrail");
+                        for (int i = 0; i < pe.Emitters.Count; i++)
+                            pe.Emitters[i].ParticleTexture = GameConst.Content.Load<Texture2D>(@"particles/" + pe.Emitters[i].ParticleTextureAssetPath);
+                        for (int i = 0; i < pe.Emitters.Count; i++)
+                            pe.Emitters[i].Initialise();
+                        
+
                         Thread.Sleep(10);
                         ContentLoadCompleted = true;
                     }
@@ -485,6 +510,7 @@ namespace demo
             player.ClientID = pn.ClientID;
             CurrentScene.AddCharacter(player);
             CurrentScene.Player = player;
+            player.TrailParticle = pe;
             player.UpdateSceneScroll();
             Control ctrl = System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle);
             ctrl.Invoke(new Action(() =>
@@ -541,6 +567,11 @@ namespace demo
                 return;
             UpdateInput();
             CurrentScene.Update(gameTime);
+            if (pe != null)
+            {
+                spritebatchrenderer.Transformation = Matrix.CreateTranslation(-CurrentScene.Viewport.X, -CurrentScene.Viewport.Y, 0);
+                pe.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+            }
             UIMgr.Update(gameTime);
             //player.Update(gameTime);
 
@@ -552,6 +583,8 @@ namespace demo
         /// This is called when the game should draw itself.
         /// </summary>
         /// <param _name="gameTime">Provides a snapshot of timing values.</param>
+        /// 
+        Matrix idmatrix = new Matrix();
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
@@ -573,6 +606,10 @@ namespace demo
             if (player != null)
                 spriteBatch.DrawString(mainfont, string.Format("{0:d}, {1:d} {2:d}", (int)player.Position.X, (int)player.Position.Y, GameConst.RenderCountPerFrame), Vector2.Zero, Color.Red);
             spriteBatch.End();
+
+            //idmatrix
+            Vector3 p = new Vector3();
+            spritebatchrenderer.RenderEffect(pe, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
             base.Draw(gameTime);
         }
 

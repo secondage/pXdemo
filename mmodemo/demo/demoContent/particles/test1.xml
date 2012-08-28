@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<XnaContent>
+  <Asset Type="ProjectMercury.ParticleEffect">
+    <Name Null="true" />
+    <Author Null="true" />
+    <Description Null="true" />
+    <Emitters>
+      <Item Type="ProjectMercury.Emitters.PointEmitter">
+        <Name>Basic Emitter</Name>
+        <Budget>5000</Budget>
+        <Term>1</Term>
+        <ReleaseQuantity>1</ReleaseQuantity>
+        <Enabled>true</Enabled>
+        <ReleaseSpeed>[12,37]</ReleaseSpeed>
+        <ReleaseColour>
+          <Red>[1,1]</Red>
+          <Green>[1,1]</Green>
+          <Blue>[1,1]</Blue>
+        </ReleaseColour>
+        <ReleaseOpacity>[1,1]</ReleaseOpacity>
+        <ReleaseScale>[24,40]</ReleaseScale>
+        <ReleaseRotation>
+          <Pitch>[0,0]</Pitch>
+          <Yaw>[0,0]</Yaw>
+          <Roll>[0,0]</Roll>
+        </ReleaseRotation>
+        <ParticleTextureAssetPath>Ring001</ParticleTextureAssetPath>
+        <BlendMode>Alpha</BlendMode>
+        <Modifiers>
+          <Modifier Type="ProjectMercury.Modifiers.OpacityFastFadeModifier">
+            <InitialOpacity>1</InitialOpacity>
+          </Modifier>
+        </Modifiers>
+        <Controllers />
+      </Item>
+    </Emitters>
+  </Asset>
+</XnaContent>
