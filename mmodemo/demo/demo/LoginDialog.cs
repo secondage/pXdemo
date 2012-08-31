@@ -47,8 +47,7 @@ namespace demo
 
         private void LoginDialog_FormClosing(object sender, FormClosingEventArgs e)
         {
-            int x = 0;
-            x = 0;
+          
         }
     }
 }

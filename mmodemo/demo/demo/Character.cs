@@ -633,7 +633,10 @@ namespace demo
         {
             UpdateMoveSyncTimer(gametime);
         }
-
+        /// <summary>
+        /// 更新移动同步计时器
+        /// </summary>
+        /// <param name="gametime"></param>
         private void UpdateMoveSyncTimer(GameTime gametime)
         {
             if (__movesynctime >= 0.0)
@@ -646,17 +649,24 @@ namespace demo
                 }
             }
         }
-
+        /// <summary>
+        /// 压入当前角色位置
+        /// </summary>
         public void PushPosition()
         {
             positionbackup = Position;
         }
-
+        /// <summary>
+        /// 弹出角色位置
+        /// </summary>
         public void PopPosition()
         {
             Position = positionbackup;
         }
-
+        /// <summary>
+        /// 角色被攻击后的Callback
+        /// </summary>
+        /// <param name="offense">进攻者</param>
         public void BeAttack(Character offense)
         {
             try
@@ -686,26 +696,43 @@ namespace demo
                 Log.WriteLine(ToString() + ":must had offense");
             }
         }
-
-
+        /// <summary>
+        /// 清除actionset list
+        /// </summary>
         public void ClearActionSet()
         {
             actionsets.Clear();
             currentactionset = null;
         }
-
+        /// <summary>
+        /// 从actionset的队列后部插入一个actionset
+        /// </summary>
+        /// <param name="animname">需要切换的动作名</param>
+        /// <param name="state">actionset对应的状态</param>
+        /// <param name="factor">转换因子</param>
+        /// <param name="o">上下文参数</param>
         public void AddActionSet(string animname, CharacterState state, CharacterActionSetChangeFactor factor, object o)
         {
             CharacterActionSet cas = new CharacterActionSet(animname, state, factor, o);
             actionsets.Add(cas);
         }
-
+        /// <summary>
+        /// 从actionset的队列前部插入一个actionset
+        /// </summary>
+        /// <param name="animname">需要切换的动作名</param>
+        /// <param name="state">actionset对应的状态</param>
+        /// <param name="factor">转换因子</param>
+        /// <param name="o">上下文参数</param>
         public void AddActionSetPre(string animname, CharacterState state, CharacterActionSetChangeFactor factor, object o)
         {
             CharacterActionSet cas = new CharacterActionSet(animname, state, factor, o);
             actionsets.Insert(0, cas);
         }
-
+        /// <summary>
+        /// 每帧从actionset list取得新的action set加入到执行，并根据
+        /// actionset的属性设置不同的完成事件
+        /// </summary>
+        /// <param name="gametime"></param>
         private void UpdateActionSet(GameTime gametime)
         {
             while (actionsets.Count > 0 && currentactionset == null)
@@ -755,6 +782,10 @@ namespace demo
                                 }
                                 break;
                             }
+                        case CharacterActionSetChangeFactor.Time:
+                            {
+                                break;
+                            }
                         case CharacterActionSetChangeFactor.Immediate:
                             {
                                 OnUpdateActionSets(this, new EventArgs());
@@ -771,11 +802,22 @@ namespace demo
 
             if (currentactionset != null)
             {
-
+                if (currentactionset.factor == CharacterActionSetChangeFactor.Time)
+                {
+                    currentactionset.duration -= gametime.ElapsedGameTime.TotalSeconds;
+                    if (currentactionset.duration <= 0.0)
+                    {
+                        OnUpdateActionSets(this, new EventArgs());
+                    }
+                }
             }
         }
 
-
+        /// <summary>
+        /// Callback when Actionset finish
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void OnUpdateActionSets(object sender, EventArgs e)
         {
             if (actionsets.Count > 0)
@@ -810,7 +852,13 @@ namespace demo
         {
             __movesynctime = -1.0;
         }
-
+        /// <summary>
+        /// create character use reflection
+        /// </summary>
+        /// <param name="path">path of character template file</param>
+        /// <param name="scene">scene of character to add</param>
+        /// <param name="name">character's name</param>
+        /// <returns></returns>
         static public Character CreateCharacter(string path, Scene scene, string name = "")
         {
             EntityDefinition.EntityDefinition ed = GameConst.Content.Load<EntityDefinition.EntityDefinition>(@"template/" + path);
