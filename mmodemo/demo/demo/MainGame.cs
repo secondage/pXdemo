@@ -328,7 +328,7 @@ namespace demo
                     }
                 }
                 clientchannel = TcpServer.CreateClient(ipaddress, port);
-                clientchannel.SetPackage<ProjectXServer.Messages.HeadSizePackage>().ReceiveMessage = ReceiveMessage;
+                clientchannel.SetPackage<HeadSizePackage>().ReceiveMessage = ReceiveMessage;
                 clientchannel.ChannelDisposed += new EventChannelDisposed(channel_ChannelDisposed);
                 clientchannel.BeginReceive();
             }
@@ -382,10 +382,9 @@ namespace demo
                             cloudTextureArray[i] = Content.Load<Texture2D>(@"cloud/yun_b" + string.Format("{0:d2}", i));
                         }
 
-                        //init character
-                        Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
-                        CurrentScene.LoadGameData();
-                        CurrentScene.LoadBackground();
+                        CharacterTitle.BlockTexture = Content.Load<Texture2D>(@"effect/block");
+
+                       
 
 
                         Texture2D texminimap = Content.Load<Texture2D>(@"minimap/scene1");
@@ -393,10 +392,16 @@ namespace demo
                         Texture2D texmapmask = Content.Load<Texture2D>(@"minimap/mapmask");
                         CurrentScene.InitMiniMap(texminimap, texminimapchar, texmapmask, 0, GameConst.ScreenHeight - 256, 256, 256);
 
-                        CharacterTitle.BlockTexture = Content.Load<Texture2D>(@"effect/block");
-                        //UIMgr.AddUIControl("Dialog_Leader", "leader_dlg", (int)UILayout.Right, (int)UILayout.Top, 0, 0, -1, 99, this);
+                       
+                        UIMgr.AddUIControl("Dialog_Leader", "leader_dlg", (int)UILayout.Right, (int)UILayout.Top, 0, 0, -1, 99, this);
                         CurrentScene.GenerateClouds(cloudTextureArray);
                         CurrentScene.SortRenderChunksByLayer();
+
+
+                        //init character
+                        Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
+                        CurrentScene.LoadGameData();
+                        CurrentScene.LoadBackground();
 
                         spritebatchrenderer.GraphicsDeviceService = this.graphics;
                         spritebatchrenderer.LoadContent(null);
@@ -472,7 +477,7 @@ namespace demo
             }
             else
             {
-                ProjectXServer.Messages.PlayerLoginSelfMsg msg = new ProjectXServer.Messages.PlayerLoginSelfMsg();
+                PlayerLoginSelfMsg msg = new PlayerLoginSelfMsg();
                 msg.ClientID = 0;
                 msg.Name = "player1";
                 msg.Position = new float[] { GameConst.ScreenWidth / 2, GameConst.ScreenHeight / 2 };
@@ -488,7 +493,7 @@ namespace demo
         /// 删除角色实例
         /// </summary>
         /// <param name="pn">角色属性描述</param>
-        private void DestoryPlayer(ProjectXServer.Messages.PlayerLogoutMsg pn)
+        private void DestoryPlayer(PlayerLogoutMsg pn)
         {
             NetPlayer p = CurrentScene.FindNetPlayer(pn.ClientID);
             if (p != null)
@@ -511,7 +516,7 @@ namespace demo
         /// 创建本地Player角色
         /// </summary>
         /// <param name="pn">角色创建属性msg，描述角色基本属性</param>
-        private void CreateLocalPlayer(ProjectXServer.Messages.PlayerLoginSelfMsg pn)
+        private void CreateLocalPlayer(PlayerLoginSelfMsg pn)
         {
             contentLoadingTask.Wait();
             player = new Player(pn.Name, CurrentScene);
@@ -554,7 +559,7 @@ namespace demo
         /// 创建远端Player实例
         /// </summary>
         /// <param name="pn">远端角色属性描述msg</param>
-        private void CreatePlayer(ProjectXServer.Messages.PlayerLoginMsg pn)
+        private void CreatePlayer(PlayerLoginMsg pn)
         {
             NetPlayer playernet = new NetPlayer(pn.Name, CurrentScene);
             CharacterDefinition.PicDef pd = Content.Load<CharacterDefinition.PicDef>(@"chardef/char3");
@@ -610,7 +615,7 @@ namespace demo
             {
                 peTrails.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
             }
-            if (peTrails != null)
+            if (peClick != null)
             {
                 peClick.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
             }
@@ -651,9 +656,18 @@ namespace demo
 
             //idmatrix
             Vector3 p = new Vector3();
-            spritebatchrenderer.RenderEffect(peTrails, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
-            spritebatchrenderer.RenderEffect(peClick, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
-            spritebatchrenderer.RenderEffect(peSpawn, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
+            if (peTrails != null)
+            {
+                spritebatchrenderer.RenderEffect(peTrails, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
+            }
+            if (peClick != null)
+            {
+                spritebatchrenderer.RenderEffect(peClick, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
+            }
+            if (peSpawn != null)
+            {
+                spritebatchrenderer.RenderEffect(peSpawn, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
+            }
             base.Draw(gameTime);
         }
 

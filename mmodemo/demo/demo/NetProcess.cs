@@ -14,23 +14,23 @@ namespace demo
     {
         private void ReceiveMessage(PacketRecieveMessagerArgs e)
         {
-            ProjectXServer.Messages.ProtobufAdapter adapter = (ProjectXServer.Messages.ProtobufAdapter)e.Message;
-            if (adapter.Message is ProjectXServer.Messages.PlayerLoginResultMsg)
+            ProtobufAdapter adapter = (ProtobufAdapter)e.Message;
+            if (adapter.Message is PlayerLoginResultMsg)
             {
-                ProjectXServer.Messages.PlayerLoginResultMsg plrm = (ProjectXServer.Messages.PlayerLoginResultMsg)adapter.Message;
-                if (plrm.Result == ProjectXServer.Messages.LoginResult.Failed_AlreadyLogin)
+                PlayerLoginResultMsg plrm = (PlayerLoginResultMsg)adapter.Message;
+                if (plrm.Result == LoginResult.Failed_AlreadyLogin)
                 {
                     MessageBox.Show("重复登录");
                 }
-                else if (plrm.Result == ProjectXServer.Messages.LoginResult.Failed)
+                else if (plrm.Result == LoginResult.Failed)
                 {
                     MessageBox.Show("登录失败");
                 }
-                else if (plrm.Result == ProjectXServer.Messages.LoginResult.Failed_Notfound)
+                else if (plrm.Result == LoginResult.Failed_Notfound)
                 {
                     MessageBox.Show("用户名不存在");
                 }
-                else if (plrm.Result == ProjectXServer.Messages.LoginResult.Failed_Password)
+                else if (plrm.Result == LoginResult.Failed_Password)
                 {
                     MessageBox.Show("密码错误");
                 }
@@ -53,40 +53,40 @@ namespace demo
 
                 }
             }
-            else if (adapter.Message is ProjectXServer.Messages.PlayerLoginSelfMsg)
+            else if (adapter.Message is PlayerLoginSelfMsg)
             {
-                ProjectXServer.Messages.PlayerLoginSelfMsg plm = (ProjectXServer.Messages.PlayerLoginSelfMsg)adapter.Message;
+                PlayerLoginSelfMsg plm = (PlayerLoginSelfMsg)adapter.Message;
                 CreateLocalPlayer(plm);
             }
-            else if (adapter.Message is ProjectXServer.Messages.PlayerLoginMsg)
+            else if (adapter.Message is PlayerLoginMsg)
             {
-                ProjectXServer.Messages.PlayerLoginMsg plm = (ProjectXServer.Messages.PlayerLoginMsg)adapter.Message;
+                PlayerLoginMsg plm = (PlayerLoginMsg)adapter.Message;
                 CreatePlayer(plm);
             }
-            else if (adapter.Message is ProjectXServer.Messages.PlayerLogoutMsg)
+            else if (adapter.Message is PlayerLogoutMsg)
             {
-                ProjectXServer.Messages.PlayerLogoutMsg plm = (ProjectXServer.Messages.PlayerLogoutMsg)adapter.Message;
+                PlayerLogoutMsg plm = (PlayerLogoutMsg)adapter.Message;
                 DestoryPlayer(plm);
             }
-            else if (adapter.Message is ProjectXServer.Messages.PlayerTimeSyncMsg)
+            else if (adapter.Message is PlayerTimeSyncMsg)
             {
-                ProjectXServer.Messages.PlayerTimeSyncMsg msg = (ProjectXServer.Messages.PlayerTimeSyncMsg)adapter.Message;
+                PlayerTimeSyncMsg msg = (PlayerTimeSyncMsg)adapter.Message;
                 GameConst.ServerDurationTime = msg.Duration;
                 GameConst.ServerTotalTime = msg.Total;
             }
-            else if (adapter.Message is ProjectXServer.Messages.PlayerPositionUpdate)
+            else if (adapter.Message is PlayerPositionUpdate)
             {
-               ProjectXServer.Messages.PlayerPositionUpdate msg = (ProjectXServer.Messages.PlayerPositionUpdate)adapter.Message;
+               PlayerPositionUpdate msg = (PlayerPositionUpdate)adapter.Message;
                CurrentScene.UpdatePlayerPosition(msg);
             }
-            else if (adapter.Message is ProjectXServer.Messages.PlayerMoveRequest)
+            else if (adapter.Message is PlayerMoveRequest)
             {
-                ProjectXServer.Messages.PlayerMoveRequest msg = (ProjectXServer.Messages.PlayerMoveRequest)adapter.Message;
+                PlayerMoveRequest msg = (PlayerMoveRequest)adapter.Message;
                 CurrentScene.UpdatePlayerMovement(msg);
             }
-            else if (adapter.Message is ProjectXServer.Messages.PlayerTargetChanged)
+            else if (adapter.Message is PlayerTargetChanged)
             {
-                ProjectXServer.Messages.PlayerTargetChanged msg = (ProjectXServer.Messages.PlayerTargetChanged)adapter.Message;
+                PlayerTargetChanged msg = (PlayerTargetChanged)adapter.Message;
                 CurrentScene.UpdatePlayerTarget(msg);
             }
         }
@@ -99,53 +99,53 @@ namespace demo
         {
             MD5 m = new MD5CryptoServiceProvider();
             byte[] s = m.ComputeHash(UnicodeEncoding.UTF8.GetBytes(password));
-            ProjectXServer.Messages.PlayerLoginRequestMsg plm = new ProjectXServer.Messages.PlayerLoginRequestMsg();
+            PlayerLoginRequestMsg plm = new PlayerLoginRequestMsg();
             plm.Name = username;
             plm.Password = BitConverter.ToString(s);
 
-            ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, plm);
+            ProtobufAdapter.Send(clientchannel, plm);
         }
 
         public static void SendRequestMovementMsg(Character player)
         {
-            ProjectXServer.Messages.PlayerMoveRequest msg = new ProjectXServer.Messages.PlayerMoveRequest();
+            PlayerMoveRequest msg = new PlayerMoveRequest();
             msg.Target = new float[2];
             msg.Target[0] = player.Target.X;
             msg.Target[1] = player.Target.Y;
             msg.Position = new float[2];
             msg.Position[0] = player.Position.X;
             msg.Position[1] = player.Position.Y;
-            ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, msg);
+            ProtobufAdapter.Send(clientchannel, msg);
         }
 
         public static void SendTargetChangedMsg(Player player)
         {
-            ProjectXServer.Messages.PlayerTargetChanged msg = new ProjectXServer.Messages.PlayerTargetChanged();
+            PlayerTargetChanged msg = new PlayerTargetChanged();
             msg.Target = new float[2];
             msg.Target[0] = player.Target.X;
             msg.Target[1] = player.Target.Y;
             msg.Position = new float[2];
             msg.Position[0] = player.Position.X;
             msg.Position[1] = player.Position.Y;
-            ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, msg);
+            ProtobufAdapter.Send(clientchannel, msg);
         }
 
         public static void SendMoveReportMsg(Character player)
         {
-            ProjectXServer.Messages.PlayerPositioReport msg = new ProjectXServer.Messages.PlayerPositioReport();
+            PlayerPositioReport msg = new PlayerPositioReport();
             msg.Position = new float[2];
             msg.Position[0] = player.Position.X;
             msg.Position[1] = player.Position.Y;
-            ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, msg);
+            ProtobufAdapter.Send(clientchannel, msg);
         }
 
         public static void SendMoveFinishMsg(Character player)
         {
-            ProjectXServer.Messages.PlayerStopRequest msg = new ProjectXServer.Messages.PlayerStopRequest();
+            PlayerStopRequest msg = new PlayerStopRequest();
             msg.Position = new float[2];
             msg.Position[0] = player.Position.X;
             msg.Position[1] = player.Position.Y;
-            ProjectXServer.Messages.ProtobufAdapter.Send(clientchannel, msg);
+            ProtobufAdapter.Send(clientchannel, msg);
         }
     }
 }

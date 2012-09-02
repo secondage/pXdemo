@@ -136,6 +136,14 @@
     </Compile>
     <Compile Include="MiniMap.cs" />
     <Compile Include="Monster.cs" />
+    <Compile Include="msg\HeadSizePackage.cs" />
+    <Compile Include="msg\PlayerLoginMsg.cs" />
+    <Compile Include="msg\PlayerLogoutMsg.cs" />
+    <Compile Include="msg\PlayerMovementMsg.cs" />
+    <Compile Include="msg\PlayerStatus.cs" />
+    <Compile Include="msg\PlayerTimeSyncMsg.cs" />
+    <Compile Include="msg\ProtobufAdapter.cs" />
+    <Compile Include="msg\Register.cs" />
     <Compile Include="NetProcess.cs" />
     <Compile Include="Npc.cs" />
     <Compile Include="Player.cs" />
@@ -209,10 +217,6 @@
     <ProjectReference Include="..\..\..\projectxserver\NetSyncObject\NetSyncObject.csproj">
       <Project>{1607D04E-D890-4F13-A6F4-93F972339170}</Project>
       <Name>NetSyncObject</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\projectxserver\ProjectXServer\Messages\Messages.csproj">
-      <Project>{E701B4D6-4482-4410-A2A8-85BE22D2A539}</Project>
-      <Name>Messages</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\CharacterDefinition\CharacterDefinition.csproj">
       <Project>{31D5E1EE-00C4-49C7-9882-E7C75DAE1C92}</Project>

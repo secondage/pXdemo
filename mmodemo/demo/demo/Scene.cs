@@ -353,7 +353,7 @@ namespace demo
         }
 
 
-        public void UpdatePlayerPosition(ProjectXServer.Messages.PlayerPositionUpdate msg)
+        public void UpdatePlayerPosition(PlayerPositionUpdate msg)
         {
             Player _p = null;
 
@@ -1943,7 +1943,7 @@ namespace demo
 
 
 
-        internal void UpdatePlayerMovement(ProjectXServer.Messages.PlayerMoveRequest msg)
+        internal void UpdatePlayerMovement(PlayerMoveRequest msg)
         {
             Player _p = FindNetPlayer(msg.ClientID);
             if (_p != null)
@@ -1956,7 +1956,7 @@ namespace demo
             }
         }
 
-        internal void UpdatePlayerTarget(ProjectXServer.Messages.PlayerTargetChanged msg)
+        internal void UpdatePlayerTarget(PlayerTargetChanged msg)
         {
             Player _p = FindNetPlayer(msg.ClientID);
             if (_p != null)
