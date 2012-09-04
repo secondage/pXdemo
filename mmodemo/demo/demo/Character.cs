@@ -507,7 +507,7 @@ namespace demo
                             if (p != null)
                             {
                                 p.CanScrollView = false;
-                                p.ResetSceneScroll();
+                                p.ResetSceneScroll(false);
                             }
                             pic.Hover = false;
                             /*if (OnActionCompleted != null)

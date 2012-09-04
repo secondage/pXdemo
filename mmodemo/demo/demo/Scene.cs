@@ -355,7 +355,6 @@ namespace demo
             return null;
         }
 
-
         public void UpdatePlayerPosition(PlayerPositionUpdate msg)
         {
             Player _p = null;
@@ -440,7 +439,7 @@ namespace demo
         {
             Animation<Vector2>.CreateAnimation2Value(new Vector2(viewport.X, viewport.Y),
                                                      new Vector2(x, y),
-                                                     0.5,
+                                                     GameConst.ViewportScrollResetTime,
                                                      Vector2.Lerp,
                                                      SetViewportPos);
 
@@ -686,6 +685,10 @@ namespace demo
 						{
 							GameConst.ViewportScrollRange = float.Parse(configelement.Element("ViewportScrollRange").Value);
 						}
+                        if (configelement.Element("ViewportScrollResetTime") != null)
+                        {
+                            GameConst.ViewportScrollResetTime = float.Parse(configelement.Element("ViewportScrollResetTime").Value);
+                        }
                     }
                     foreach (XElement element in defelement.Elements("NpcDef"))
                     {
@@ -1844,6 +1847,7 @@ namespace demo
                     _hostCharacter.Picture.HighLight = false;
                 host.Picture.HighLight = true;
                 _hostCharacter = host;
+#if WINDOWS
                 if (host is Player)
                 {
                     if (localplayer.Operate == Character.OperateType.Magic)
@@ -1866,10 +1870,13 @@ namespace demo
                         GameCursor.SetCursor(GameCursor.CursorType.Magic);
                     }
                 }
+#endif
             }
             else
             {
+#if WINDOWS
                 GameCursor.SetCursor(GameCursor.CursorType.Normal);
+#endif
                 if (_hostCharacter != null)
                 {
                     _hostCharacter.Picture.HighLight = false;
@@ -1924,7 +1931,6 @@ namespace demo
         }
 
 
-
         internal void UpdatePlayerMovement(PlayerMoveRequest msg)
         {
             Player _p = FindNetPlayer(msg.ClientID);
@@ -1946,5 +1952,7 @@ namespace demo
                 _p.Target = new Vector2(msg.Target[0], msg.Target[1]);
             }
         }
+
     }
+
 }

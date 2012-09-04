@@ -22,10 +22,10 @@
         <ReleaseRotation>
           <Pitch>[0,0]</Pitch>
           <Yaw>[0,0]</Yaw>
-          <Roll>[-1.47,1.47]</Roll>
+          <Roll>[-0.02565634,0.02565634]</Roll>
         </ReleaseRotation>
         <ParticleTextureAssetPath>Star</ParticleTextureAssetPath>
-        <BlendMode>Alpha</BlendMode>
+        <BlendMode>Add</BlendMode>
         <Modifiers>
           <Modifier Type="ProjectMercury.Modifiers.OpacityInterpolator2">
             <InitialOpacity>0.6</InitialOpacity>
@@ -45,7 +45,7 @@
             <DampingCoefficient>5</DampingCoefficient>
           </Modifier>
           <Modifier Type="ProjectMercury.Modifiers.RotationModifier">
-            <RotationRate>0 0 2</RotationRate>
+            <RotationRate>0 0 0.0349065848</RotationRate>
           </Modifier>
         </Modifiers>
         <Controllers>
@@ -71,7 +71,7 @@
         <ReleaseRotation>
           <Pitch>[0,0]</Pitch>
           <Yaw>[0,0]</Yaw>
-          <Roll>[-3.14,3.14]</Roll>
+          <Roll>[-0.05480334,0.05480334]</Roll>
         </ReleaseRotation>
         <ParticleTextureAssetPath>Star</ParticleTextureAssetPath>
         <BlendMode>Add</BlendMode>
@@ -94,12 +94,11 @@
             <Strength>200</Strength>
           </Modifier>
           <Modifier Type="ProjectMercury.Modifiers.RotationModifier">
-            <RotationRate>0 0 -2</RotationRate>
+            <RotationRate>0 0 -0.0349065848</RotationRate>
           </Modifier>
         </Modifiers>
         <Controllers />
       </Item>
-     
     </Emitters>
   </Asset>
 </XnaContent>

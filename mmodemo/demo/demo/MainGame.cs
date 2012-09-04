@@ -346,6 +346,8 @@ namespace demo
                 Transformation = Matrix.CreateTranslation(0, 0, 1f)
             };
 
+            loadingTexture = Content.Load<Texture2D>("ui/loading");
+
             GraphicsDevice.ScissorRectangle = new Rectangle(0, 0, GameConst.ScreenWidth, GameConst.ScreenHeight);
             var source = new CancellationTokenSource();
             var token = source.Token;
@@ -394,6 +396,7 @@ namespace demo
                         spritebatchrenderer.GraphicsDeviceService = this.graphics;
                         spritebatchrenderer.LoadContent(null);
 
+#if PARTICLE_NOCONTENT
                         if (assemblyMercuryParticleSerializer != null)
                         {
                             Type type = assemblyMercuryParticleSerializer.GetType("MercuryParticleSerializer.DefaultSerializer");
@@ -425,6 +428,26 @@ namespace demo
 
                             }
                         }
+#else
+                        peTrails = Content.Load<ParticleEffect>(@"particles/magictrail");
+                        for (int i = 0; i < peTrails.Emitters.Count; i++)
+                        {
+                            peTrails.Emitters[i].ParticleTexture = GameConst.Content.Load<Texture2D>(@"particles/" + peTrails.Emitters[i].ParticleTextureAssetPath);
+                            peTrails.Emitters[i].Initialise();
+                        }
+                        peSpawn = Content.Load<ParticleEffect>(@"particles/BeamMeUp");
+                        for (int i = 0; i < peSpawn.Emitters.Count; i++)
+                        {
+                            peSpawn.Emitters[i].ParticleTexture = GameConst.Content.Load<Texture2D>(@"particles/" + peSpawn.Emitters[i].ParticleTextureAssetPath);
+                            peSpawn.Emitters[i].Initialise();
+                        }
+                        peClick = Content.Load<ParticleEffect>(@"particles/BasicExplosion");
+                        for (int i = 0; i < peClick.Emitters.Count; i++)
+                        {
+                            peClick.Emitters[i].ParticleTexture = GameConst.Content.Load<Texture2D>(@"particles/" + peClick.Emitters[i].ParticleTextureAssetPath);
+                            peClick.Emitters[i].Initialise();
+                        }
+#endif
 
                         Thread.Sleep(10);
                         ContentLoadCompleted = true;
@@ -535,12 +558,12 @@ namespace demo
             CurrentScene.AddCharacter(player);
             CurrentScene.Player = player;
             player.TrailParticle = peTrails;
-            player.UpdateSceneScroll();
-            Control ctrl = System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle);
+            player.ResetSceneScroll(true);
+            /*Control ctrl = System.Windows.Forms.Control.FromHandle(GameConst.GameWindow.Handle);
             ctrl.Invoke(new Action(() =>
             {
                 this.Window.Title = pn.Name;
-            }));
+            }));*/
 
         }
         /// <summary>
@@ -628,22 +651,23 @@ namespace demo
             if (!ContentLoadCompleted)
             {
                 spriteBatch.Begin();
-                spriteBatch.Draw(loadingTexture, new Vector2(GameConst.ScreenWidth - loadingTexture.Width, GameConst.ScreenHeight - loadingTexture.Height),
+                spriteBatch.Draw(loadingTexture, new Vector2(GameConst.ScreenWidth - loadingTexture.Width / 2, GameConst.ScreenHeight - loadingTexture.Height / 2),
                                   null, Color.White, _loadingangle, new Vector2(loadingTexture.Width / 2, loadingTexture.Height / 2), 1.0f, SpriteEffects.None, 1.0f);
                 spriteBatch.End();
                 _loadingangle += 0.1f;
+                Thread.Sleep(20);
                 return;
             }
 
             GameConst.RenderCountPerFrame = 0;
-            //CurrentScene.RenderPrepositive();
+            CurrentScene.RenderPrepositive();
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
             CurrentScene.Render(spriteBatch);
             spriteBatch.End();
-            //CurrentScene.RenderPostpositive();
+            CurrentScene.RenderPostpositive();
 
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullCounterClockwise);
-            //UIMgr.Render(spriteBatch);
+            UIMgr.Render(spriteBatch);
             spriteBatch.End();
 
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
@@ -652,7 +676,7 @@ namespace demo
             spriteBatch.End();
 
             //idmatrix
-            /*Vector3 p = new Vector3();
+            Vector3 p = new Vector3();
             if (peTrails != null)
             {
                 spritebatchrenderer.RenderEffect(peTrails, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
@@ -664,7 +688,7 @@ namespace demo
             if (peSpawn != null)
             {
                 spritebatchrenderer.RenderEffect(peSpawn, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
-            }*/
+            }
             base.Draw(gameTime);
         }
 

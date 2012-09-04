@@ -54,24 +54,28 @@ namespace demo
             }
         }
 
-        public void ResetSceneScroll()
+        public void ResetSceneScroll(bool force)
         {
             if (scene.State == demo.Scene.SceneState.Battle)
                 return;
             Vector4 vp = scene.Viewport;
             float x = vp.X;
             float y = vp.Y;
-            if (_GetScrollableH())
+            Vector2 vpc = new Vector2(vp.X + vp.Z * 0.5f, vp.Y + vp.W * 0.5f);
+            if (Vector2.Distance(vpc, position) > GameConst.ViewportScrollRange || force)
             {
-                x = position.X - vp.Z * 0.5f;
-                x = MathHelper.Clamp(x, 0.0f, scene.ActualSize.Z);
+                if (_GetScrollableH())
+                {
+                    x = position.X - vp.Z * 0.5f;
+                    x = MathHelper.Clamp(x, 0.0f, scene.ActualSize.Z);
+                }
+                if (_GetScrollableV())
+                {
+                    y = position.Y - vp.W * 0.5f;
+                    y = MathHelper.Clamp(y, 0.0f, scene.ActualSize.W - GameConst.ScreenHeight);
+                }
+                scene.SetViewportPosDefer(x, y);
             }
-            if (_GetScrollableV())
-            {
-                y = position.Y - vp.W * 0.5f;
-                y = MathHelper.Clamp(y, 0.0f, scene.ActualSize.W - GameConst.ScreenHeight);
-            }
-            scene.SetViewportPosDefer(x, y);
         }
 
         private bool _GetScrollableH()

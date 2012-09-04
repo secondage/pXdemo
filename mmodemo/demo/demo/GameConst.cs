@@ -24,7 +24,7 @@ namespace demo
         static private int fixedenemynum = -1;
         //static private Vector2 scale = new Vector2(0.78125f, 0.78125f);
         static private Vector2 scale = new Vector2(1, 1);
-        static private Vector2 uiscale =  new Vector2(0.625f, 0.625f);
+        static private Vector2 uiscale =  new Vector2(1, 1);
 
         static public float PlayerSpeed = 500;
         static public int PlayerAtk = 100;
@@ -40,6 +40,7 @@ namespace demo
                                                     typeof(CharacterTitle), typeof(HoverStone)*/ };
 
         static private float _viewportScrollRange = 300;
+        static public float ViewportScrollResetTime = 1.0f;
 
 
         static public int FixedEnemyNum

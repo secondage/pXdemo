@@ -8,6 +8,7 @@
     <BossRushMode>2</BossRushMode>
     <BossRushMode1Offset>200</BossRushMode1Offset>
     <ViewportScrollRange>200</ViewportScrollRange>
+    <ViewportScrollResetTime>1.0</ViewportScrollResetTime>
   </Config>
   <NpcDef>
     <Npc>
