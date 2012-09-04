@@ -44,6 +44,9 @@ namespace demo.uicontrols
             }
         }
 
+        public UILayout LayoutHorizontal { get; set; }
+        public UILayout LayoutVerticality { get; set; }
+
         public Rectangle SourceRect
         {
             get
@@ -328,8 +331,42 @@ namespace demo.uicontrols
                     else
                         _size.Y = 1.0f;
                 }
+                _size.X *= GameConst.UIScale.X;
+                _size.Y *= GameConst.UIScale.Y;
                 Size = _size;
                 //sizedirty = false;
+                //缩放后需要重新定位
+                controlrect.Width = (int)((float)controlrect.Width * GameConst.UIScale.X);
+                controlrect.Height = (int)((float)controlrect.Height * GameConst.UIScale.Y);
+                
+                if (LayoutHorizontal == UILayout.Center)
+                {
+                    position.X += ((float)srcrect.Width * (_size.X / GameConst.UIScale.X - _size.X)) * 0.5f;
+                }
+                else if (LayoutHorizontal == UILayout.Right)
+                {
+                    position.X += (float)srcrect.Width * (_size.X / GameConst.UIScale.X - _size.X);
+                }
+                if (LayoutVerticality == UILayout.Center)
+                {
+                    position.Y += ((float)srcrect.Height * (_size.Y / GameConst.UIScale.Y - _size.Y)) * 0.5f;
+                }
+                else if (LayoutVerticality == UILayout.Bottom)
+                {
+                    position.Y += (float)srcrect.Height * (_size.Y / GameConst.UIScale.Y - _size.Y);
+                }
+                if (parent != null)
+                {
+                    if (position.X > 0)
+                        position.X -= position.X * (1.0f - GameConst.UIScale.X);
+                    else
+                        position.X += position.X * (1.0f - GameConst.UIScale.X);
+                    if (position.Y > 0)
+                        position.Y -= Math.Abs(position.Y) * (1.0f - GameConst.UIScale.Y);
+                    else
+                        position.Y += Math.Abs(position.Y) * (1.0f - GameConst.UIScale.Y);
+
+                }
                 Position = position; //make controlrect
             }
         }
@@ -390,7 +427,11 @@ namespace demo.uicontrols
                 UIElementState us = UIElementState.Normal;
                 try
                 {
-                    us = (UIElementState)Enum.Parse(typeof(UIElementState), rect.name);
+#if WINDOWS_PHONE				
+                    us = (UIElementState)Enum.Parse(typeof(UIElementState), rect.name, false);
+#else
+					us = (UIElementState)Enum.Parse(typeof(UIElementState), rect.name);
+#endif					
                 }
                 catch (ArgumentException e)
                 {

@@ -503,6 +503,12 @@ namespace demo
                         {
                             //pic.SetCurrentAnimationByName("Landing");
                             //pic.CurrentAnimation.OnAnimationFini += new EventHandler(OnPicAnimationFini);
+                            Player p = this as Player;
+                            if (p != null)
+                            {
+                                p.CanScrollView = false;
+                                p.ResetSceneScroll();
+                            }
                             pic.Hover = false;
                             /*if (OnActionCompleted != null)
                             {
@@ -752,7 +758,7 @@ namespace demo
                             }
                         case CharacterActionSetChangeFactor.ArriveTarget:
                             {
-                                Target = currentactionset.target;
+                                //Target = currentactionset.target;
                                 OnArrived += new EventHandler(OnUpdateActionSets);
                                 break;
                             }
@@ -859,7 +865,11 @@ namespace demo
         /// <param name="scene">scene of character to add</param>
         /// <param name="name">character's name</param>
         /// <returns></returns>
+#if WINDOWS_PHONE
+        static public Character CreateCharacter(string path, Scene scene, string name)
+#else		
         static public Character CreateCharacter(string path, Scene scene, string name = "")
+#endif		
         {
             EntityDefinition.EntityDefinition ed = GameConst.Content.Load<EntityDefinition.EntityDefinition>(@"template/" + path);
 

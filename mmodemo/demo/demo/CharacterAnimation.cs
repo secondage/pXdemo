@@ -202,24 +202,44 @@ namespace demo
             }
             else
             {
-                if (f.align.HasFlag(AligningMode.Center))
+#if WINDOWS_PHONE			
+                if (((int)f.align & (int)AligningMode.Center) != 0)
+#else
+				if (f.align.HasFlag(AligningMode.Center))
+#endif				
                 {
                     currentOrigin.X = f.rect.Width / 2;
                     currentOrigin.Y = f.rect.Height / 2;
                 }
-                if (f.align.HasFlag(AligningMode.Left))
+#if WINDOWS_PHONE				
+                if (((int)f.align & (int)AligningMode.Left) != 0)
+#else
+				if (f.align.HasFlag(AligningMode.Left))
+#endif								
                 {
                     currentOrigin.X = 0;
                 }
+#if WINDOWS_PHONE				
+                else if (((int)f.align & (int)AligningMode.Right) != 0)
+#else
                 else if (f.align.HasFlag(AligningMode.Right))
+#endif								
                 {
                     currentOrigin.X = f.rect.Width;
                 }
-                if (f.align.HasFlag(AligningMode.Top))
+#if WINDOWS_PHONE				
+                if (((int)f.align & (int)AligningMode.Top) != 0)
+#else			
+				if (f.align.HasFlag(AligningMode.Top))
+#endif					
                 {
                     currentOrigin.Y = 0;
                 }
-                if (f.align.HasFlag(AligningMode.Bottom))
+#if WINDOWS_PHONE				
+                else if (((int)f.align & (int)AligningMode.Bottom) != 0)
+#else
+				else if (f.align.HasFlag(AligningMode.Bottom))
+#endif				
                 {
                     currentOrigin.Y = f.rect.Height;
                 }

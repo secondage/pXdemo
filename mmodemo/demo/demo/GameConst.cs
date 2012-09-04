@@ -24,6 +24,7 @@ namespace demo
         static private int fixedenemynum = -1;
         //static private Vector2 scale = new Vector2(0.78125f, 0.78125f);
         static private Vector2 scale = new Vector2(1, 1);
+        static private Vector2 uiscale =  new Vector2(0.625f, 0.625f);
 
         static public float PlayerSpeed = 500;
         static public int PlayerAtk = 100;
@@ -36,7 +37,10 @@ namespace demo
         static public int BossRushMode = 0;
         static public int BossRushMode1Offset = 60;
         static public Type[] SkipRenderTypeList = {/*typeof(Cloud), typeof(Background), typeof(CharacterPic),
-                                                    typeof(CharacterTitle), typeof(HoverStone) */};
+                                                    typeof(CharacterTitle), typeof(HoverStone)*/ };
+
+        static private float _viewportScrollRange = 300;
+
 
         static public int FixedEnemyNum
         {
@@ -119,6 +123,20 @@ namespace demo
             }
         }
 
+        static public float ViewportScrollRange
+        {
+            get
+            {
+                return _viewportScrollRange;
+            }
+            set
+            {
+                _viewportScrollRange = value;
+            }
+        }
+
+
+
         static public Vector2 NameTitleOffset
         {
             get
@@ -164,6 +182,19 @@ namespace demo
             set
             {
                 scale = value;
+            }
+        }
+
+
+        static public Vector2 UIScale
+        {
+            get
+            {
+                return uiscale;
+            }
+            set
+            {
+                uiscale = value;
             }
         }
 

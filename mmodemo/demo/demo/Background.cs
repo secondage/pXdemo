@@ -100,7 +100,11 @@ namespace demo
             if (autoscroll)
             {
                 _movement += autoscrollspeed * (float)gametime.ElapsedGameTime.TotalSeconds;
-                if (autoscrolldir.HasFlag(AutoScrollDirectionType.Vertical))
+#if WINDOWS_PHONE
+                if (autoscrolldir == AutoScrollDirectionType.Vertical)
+#else
+				if (autoscrolldir.HasFlag(AutoScrollDirectionType.Vertical))
+#endif				
                 {
                     if (_movement.Y > 1.0f || _movement.Y < -1.0f)
                     {
@@ -108,7 +112,11 @@ namespace demo
                         _movement.Y = 0;
                     }
                 }
-                if (autoscrolldir.HasFlag(AutoScrollDirectionType.Horizontal))
+#if WINDOWS_PHONE				
+                if (autoscrolldir == AutoScrollDirectionType.Horizontal)
+#else
+				if (autoscrolldir.HasFlag(AutoScrollDirectionType.Horizontal))
+#endif								
                 {
                     if (_movement.X > 1.0f || _movement.X < -1.0f)
                     {

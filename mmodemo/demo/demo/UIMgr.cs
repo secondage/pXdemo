@@ -36,6 +36,7 @@ namespace demo
     };
     public enum UILayout
     {
+        Free = 0,
         Center = -1,
         Right = -2,
         Left = -3,
@@ -164,6 +165,10 @@ namespace demo
                 int ax = x;
                 int ay = y;
                 GenerateCoord(x, y, out ax, out ay, control.Texture);
+                if (x < 0)
+                    control.LayoutHorizontal = (UILayout)x;
+                if (y < 0)
+                    control.LayoutVerticality = (UILayout)y;
                 control.Position = new Vector2(ax, ay);
                 control.RenderSize = new Point(w, h);
                 control.Receiver = r;

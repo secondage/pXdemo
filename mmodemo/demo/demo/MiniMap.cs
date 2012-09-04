@@ -25,7 +25,9 @@ namespace demo
         private Vector2 rendersize = new Vector2();
         public RenderTarget2D rendertarget;
         private SpriteBatch sb;
+#if WINDOWS || XBOX
         private Effect maskEffect;
+#endif		
         private Texture2D overlaytexture;
 
         
@@ -81,8 +83,9 @@ namespace demo
             rendersize.Y = (float)h / (float)backgroundtexture.Height;
             rendertarget = new RenderTarget2D(GameConst.Graphics.GraphicsDevice, w, h, false, SurfaceFormat.Color, DepthFormat.None);
             sb = new SpriteBatch(GameConst.Graphics.GraphicsDevice);
-
+#if WINDOWS || XBOX
             maskEffect = GameConst.Content.Load<Effect>(@"minimap/maskeffect");
+#endif			
             overlaytexture = GameConst.Content.Load<Texture2D>(@"minimap/mapmask2");
         }
 
@@ -113,7 +116,11 @@ namespace demo
             //p.Y -= scene.Viewport.Y * s.Y * (ts.Y / backgroundtexture.Height) * scalex;
             p.X -= scene.Viewport.X / ts.X;
             p.Y -= scene.Viewport.Y / ts.Y;
+#if WINDOWS || XBOX			
             sb.Begin(SpriteSortMode.Immediate, null, null, null, null, maskEffect);
+#else
+			sb.Begin();
+#endif						
             //sb.Draw(backgroundtexture, p, null, Color.White, 0.0f, Vector2.Zero, /*new Vector2(ts.X / backgroundtexture.Width, ts.Y / backgroundtexture.Height) * scalex*/Vector2.One * scalex, SpriteEffects.None, 0.0f);
             sb.End();
             //Vector2 p = new Vector2();

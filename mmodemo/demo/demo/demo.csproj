@@ -100,7 +100,7 @@
     <Reference Include="mscorlib" />
     <Reference Include="ProjectMercury, Version=3.1.0.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\ProjectMercury.dll</HintPath>
+      <HintPath>..\..\Lib\ProjectMercury.dll</HintPath>
     </Reference>
     <Reference Include="protobuf-net">
       <HintPath>..\..\Lib\protobuf-net.dll</HintPath>
@@ -118,6 +118,7 @@
     <Reference Include="System.Net" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Animation.cs" />
     <Compile Include="Background.cs" />
     <Compile Include="Character.cs" />
     <Compile Include="CharacterAnimation.cs" />

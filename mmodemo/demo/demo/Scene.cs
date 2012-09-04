@@ -16,7 +16,11 @@ using System.Diagnostics;
 using demo.uicontrols;
 using System.Threading;
 using System.IO;
+#if WINDOWS
 using System.Windows.Forms;
+#endif
+using System.Xml.Linq;
+using demo.animation;
 
 namespace demo
 {
@@ -181,8 +185,7 @@ namespace demo
                     continue;
                 rc.Render(sb);
             }
-
-
+       
             if (state == SceneState.Battle && _roundtime >= 0)
             {
                 int sec = (int)_roundtime;
@@ -427,6 +430,24 @@ namespace demo
             viewport.Y = y;
         }
 
+        private void SetViewportPos(ref Vector2 v)
+        {
+            viewport.X = v.X;
+            viewport.Y = v.Y;
+        }
+       
+        public void SetViewportPosDefer(float x, float y)
+        {
+            Animation<Vector2>.CreateAnimation2Value(new Vector2(viewport.X, viewport.Y),
+                                                     new Vector2(x, y),
+                                                     0.5,
+                                                     Vector2.Lerp,
+                                                     SetViewportPos);
+
+        }
+
+       
+
         public void SetViewportSize(float width, float height)
         {
             viewport.Z = width;
@@ -592,7 +613,11 @@ namespace demo
                         mtmp = "evilspirit";
                     else if (es == 3)
                         mtmp = "boss";
-                    Monster monster = Character.CreateCharacter(mtmp, this) as Monster;//new Monster(es == 1 ? "魔军" : "妖军" + (i + 1).ToString(), this);
+#if WINDOWS_PHONE						
+                    Monster monster = Character.CreateCharacter(mtmp, this, "monster") as Monster;//new Monster(es == 1 ? "魔军" : "妖军" + (i + 1).ToString(), this);
+#else
+					Monster monster = Character.CreateCharacter(mtmp, this) as Monster;//new Monster(es == 1 ? "魔军" : "妖军" + (i + 1).ToString(), this);
+#endif					
                     if (monster != null)
                     {
                         monster.Layer = 15;
@@ -623,237 +648,189 @@ namespace demo
                 countdowneffect.CoordinateSystem = RenderChunk.CoordinateSystemType.Screen;
                 countdowneffect.PlaySpeed = 1.0f;
 
-
-                System.IO.Stream stream = TitleContainer.OpenStream(name + ".xml");
-                XmlDocument doc = new XmlDocument();
-                doc.Load(stream);
-                XmlNodeList constdef = doc.GetElementsByTagName("Config", "");
-                if (constdef.Count > 0)
+                
+                using(System.IO.Stream stream = TitleContainer.OpenStream(name + ".xml"))
+				{
+                XDocument doc = XDocument.Load(stream);
+                XElement defelement = doc.Element("SceneDef");
+                if (defelement != null)
                 {
-                    for (int i = 0; i < constdef[0].ChildNodes.Count; ++i)
+                    XElement configelement = defelement.Element("Config");
+                    if (configelement != null)
                     {
-                        XmlNode node = constdef[0].ChildNodes[i];
-                        if (node != null)
+                        if (configelement.Element("FixedEnemyNum") != null)
                         {
-                            switch (node.Name)
-                            {
-                                case "FixedEnemyNum":
-                                    {
-                                        GameConst.FixedEnemyNum = Convert.ToInt32(node.FirstChild.Value);
-                                        break;
-                                    }
-                                case "PlayerSpeed":
-                                    {
-                                        GameConst.PlayerSpeed = Convert.ToInt32(node.FirstChild.Value);
-                                        break;
-                                    }
-                                case "PlayerHP":
-                                    {
-                                        GameConst.PlayerHP = Convert.ToInt32(node.FirstChild.Value);
+                            GameConst.FixedEnemyNum = int.Parse(configelement.Element("FixedEnemyNum").Value);
+                        }
+                        if (configelement.Element("PlayerSpeed") != null)
+                        {
+                            GameConst.PlayerSpeed = int.Parse(configelement.Element("PlayerSpeed").Value);
+                        }
+                        if (configelement.Element("PlayerHP") != null)
+                        {
+                            GameConst.PlayerHP = int.Parse(configelement.Element("PlayerHP").Value);
+                        }
+                        if (configelement.Element("PlayerATK") != null)
+                        {
+                            GameConst.PlayerAtk = int.Parse(configelement.Element("PlayerATK").Value);
+                        }
+                        if (configelement.Element("BossRushMode") != null)
+                        {
+                            GameConst.BossRushMode = int.Parse(configelement.Element("BossRushMode").Value);
+                        }
+                        if (configelement.Element("BossRushMode1Offset") != null)
+                        {
+                            GameConst.BossRushMode1Offset = int.Parse(configelement.Element("BossRushMode1Offset").Value);
+                        }
+						if (configelement.Element("ViewportScrollRange") != null)
+						{
+							GameConst.ViewportScrollRange = float.Parse(configelement.Element("ViewportScrollRange").Value);
+						}
+                    }
+                    foreach (XElement element in defelement.Elements("NpcDef"))
+                    {
+                        XElement npcelement = element.Element("Npc");
+                        if (npcelement != null)
+                        {
+                            string npcname = "";
+                            float x = 0;
+                            float y = 0;
+                            int hp = 0;
+                            float speed = 0;
+                            string pic = "";
+                            int layer = 0;
+                            bool visible = true;
+                            List<string> quests = new List<string>();
 
-                                        break;
-                                    }
-                                case "PlayerATK":
-                                    {
-                                        GameConst.PlayerAtk = Convert.ToInt32(node.FirstChild.Value);
-                                        break;
-                                    }
-                                case "BossRushMode":
-                                    {
-                                        GameConst.BossRushMode = Convert.ToInt32(node.FirstChild.Value);
-                                        break;
-                                    }
-                                case "BossRushMode1Offset":
-                                    {
-                                        GameConst.BossRushMode1Offset = Convert.ToInt32(node.FirstChild.Value);
-                                        break;
-                                    }
+                            if (npcelement.Element("Name") != null)
+                            {
+                                npcname = npcelement.Element("Name").Value;
                             }
+                            if (npcelement.Element("HP") != null)
+                            {
+                                hp = int.Parse(npcelement.Element("HP").Value);
+                            }
+                            if (npcelement.Element("ScreenX") != null)
+                            {
+                                x = int.Parse(npcelement.Element("ScreenX").Value);
+                            }
+                            if (npcelement.Element("ScreenY") != null)
+                            {
+                                y = int.Parse(npcelement.Element("ScreenY").Value);
+                            }
+                            if (npcelement.Element("Speed") != null)
+                            {
+                                speed = int.Parse(npcelement.Element("Speed").Value);
+                            }
+                            if (npcelement.Element("Picture") != null)
+                            {
+                                pic = npcelement.Element("Picture").Value;
+                            }
+                            if (npcelement.Element("Layer") != null)
+                            {
+                                layer = int.Parse(npcelement.Element("Layer").Value);
+                            }
+                            if (npcelement.Element("Quest") != null)
+                            {
+                                //layer = int.Parse(npcelement.Element("Layer").Value);
+                                foreach (XElement qelement in npcelement.Elements("Quest").Elements())
+                                {
+                                    quests.Add(qelement.Name.LocalName);
+                                }
+                            }
+                            if (npcelement.Element("Visible") != null)
+                            {
+                                visible = bool.Parse(npcelement.Element("Visible").Value);
+                            }
+
+
+                            Npc npc = new Npc(npcname, this);
+                            CharacterDefinition.PicDef pd = GameConst.Content.Load<CharacterDefinition.PicDef>(@"chardef/" + pic);
+                            CharacterPic cpic = new CharacterPic(pd, layer);
+                            npc.Picture = cpic;
+
+
+                            CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
+                            title.NameString = npcname;
+                            title.Layer = layer;
+                            title.Character = npc;
+
+                            npc.Position = new Vector2(x, y);
+                            npc.HP = hp;
+
+                            npc.State = CharacterState.Idle;
+                            npc.Speed = speed;
+                            npc.Title = title;
+                            npc.Picture.State = visible ? RenderChunk.RenderChunkState.Show : RenderChunk.RenderChunkState.Invisible;
+                            npc.Title.State = visible ? RenderChunk.RenderChunkState.Show : RenderChunk.RenderChunkState.Invisible;
+                            foreach (string qn in quests)
+                            {
+                                npc.AddQuest(qn);
+                            }
+                            AddCharacter(npc);
+                            //npc.
+                        }
+                    }
+
+                    foreach (XElement element in defelement.Elements("HoverStoneDef"))
+                    {
+                        XElement stoneelement = element.Element("HoverStone");
+                        if (stoneelement != null)
+                        {
+                            HoverStone hs = new HoverStone();
+                            if (stoneelement.Element("Texture") != null)
+                            {
+                                hs.TextureFileName = stoneelement.Element("Texture").Value;
+                                hs.Texture = GameConst.Content.Load<Texture2D>(@"stone/" + stoneelement.Element("Texture").Value);
+                            }
+                            if (stoneelement.Element("Position") != null)
+                            {
+                                float x = 0, y = 0;
+                                if (stoneelement.Element("Position").Element("X") != null)
+                                {
+                                    x = float.Parse(stoneelement.Element("Position").Element("X").Value);
+                                }
+                                if (stoneelement.Element("Position").Element("Y") != null)
+                                {
+                                    y = float.Parse(stoneelement.Element("Position").Element("Y").Value);
+                                }
+
+                                hs.Position = new Vector2(x, y);
+                            }
+                            if (stoneelement.Element("Layer") != null)
+                            {
+                                hs.Layer = int.Parse(stoneelement.Element("Layer").Value);
+                            }
+                            if (stoneelement.Element("Size") != null)
+                            {
+                                float x = 0, y = 0;
+                                if (stoneelement.Element("Size").Element("X") != null)
+                                {
+                                    x = float.Parse(stoneelement.Element("Size").Element("X").Value);
+                                }
+                                if (stoneelement.Element("Size").Element("Y") != null)
+                                {
+                                    y = float.Parse(stoneelement.Element("Size").Element("Y").Value);
+                                }
+
+                                hs.Size = new Vector2(x, y);
+                            }
+                            if (stoneelement.Element("Range") != null)
+                            {
+                                hs.AMP = float.Parse(stoneelement.Element("Range").Value);
+                            }
+                            if (stoneelement.Element("CycleTime") != null)
+                            {
+                                hs.TimeOfCycle = float.Parse(stoneelement.Element("CycleTime").Value);
+                            }
+                            AddRenderChunk(hs);
                         }
                     }
                 }
-                XmlNodeList npcdef = doc.GetElementsByTagName("NpcDef", "");
-                for (int i = 0; i < npcdef[0].ChildNodes.Count; ++i)
-                {
-                    XmlNode node = npcdef[0].ChildNodes[i];
-                    if (node.Name == "Npc")
-                    {
-                        string npcname = "";
-                        float x = 0;
-                        float y = 0;
-                        int hp = 0;
-                        float speed = 0;
-                        string pic = "";
-                        int layer = 0;
-                        bool visible = true;
-                        List<string> quests = new List<string>();
-
-                        for (int j = 0; j < node.ChildNodes.Count; ++j)
-                        {
-                            XmlNode an = node.ChildNodes[j];
-                            switch (an.Name)
-                            {
-                                case "Name":
-                                    {
-                                        npcname = an.FirstChild.Value;
-                                        break;
-                                    }
-                                case "Hp":
-                                    {
-                                        hp = Convert.ToInt32(an.FirstChild.Value);
-                                        break;
-                                    }
-                                case "ScreenX":
-                                    {
-                                        x = (float)Convert.ToDouble(an.FirstChild.Value);
-                                        break;
-                                    }
-                                case "ScreenY":
-                                    {
-                                        y = (float)Convert.ToDouble(an.FirstChild.Value);
-                                        break;
-                                    }
-                                case "Speed":
-                                    {
-                                        speed = (float)Convert.ToDouble(an.FirstChild.Value);
-                                        break;
-                                    }
-                                case "Picture":
-                                    {
-                                        pic = an.FirstChild.Value;
-                                        break;
-                                    }
-                                case "Layer":
-                                    {
-                                        layer = Convert.ToInt32(an.FirstChild.Value);
-                                        break;
-                                    }
-                                case "Quest":
-                                    {
-                                        for (int k = 0; k < an.ChildNodes.Count; ++k)
-                                        {
-                                            XmlNode qn = an.ChildNodes[k];
-                                            quests.Add(qn.Name);
-                                        }
-                                        break;
-                                    }
-                                case "Visible":
-                                    {
-                                        visible = Convert.ToBoolean(an.FirstChild.Value);
-                                        break;
-                                    }
-                            }
-                        }
-                        Npc npc = new Npc(npcname, this);
-                        CharacterDefinition.PicDef pd = GameConst.Content.Load<CharacterDefinition.PicDef>(@"chardef/" + pic);
-                        CharacterPic cpic = new CharacterPic(pd, layer);
-                        npc.Picture = cpic;
-
-
-                        CharacterTitle title = new CharacterTitle(GameConst.CurrentFont);
-                        title.NameString = npcname;
-                        title.Layer = layer;
-                        title.Character = npc;
-
-                        npc.Position = new Vector2(x, y);
-                        npc.HP = hp;
-
-                        npc.State = CharacterState.Idle;
-                        npc.Speed = speed;
-                        npc.Title = title;
-                        npc.Picture.State = visible ? RenderChunk.RenderChunkState.Show : RenderChunk.RenderChunkState.Invisible;
-                        npc.Title.State = visible ? RenderChunk.RenderChunkState.Show : RenderChunk.RenderChunkState.Invisible;
-                        foreach (string qn in quests)
-                        {
-                            npc.AddQuest(qn);
-                        }
-                        AddCharacter(npc);
-                        //npc.
-                    }
-
-                }
-
-                XmlNodeList hsdef = doc.GetElementsByTagName("HoverStoneDef", "");
-                for (int i = 0; i < hsdef[0].ChildNodes.Count; ++i)
-                {
-                    XmlNode node = hsdef[0].ChildNodes[i];
-                    if (node.Name == "HoverStone")
-                    {
-                        HoverStone hs = new HoverStone();
-                        for (int j = 0; j < node.ChildNodes.Count; ++j)
-                        {
-                            XmlNode an = node.ChildNodes[j];
-                            switch (an.Name)
-                            {
-                                case "Texture":
-                                    hs.TextureFileName = an.FirstChild.Value;
-                                    hs.Texture = GameConst.Content.Load<Texture2D>(@"stone/" + an.FirstChild.Value);
-                                    break;
-                                case "Position":
-                                    {
-                                        float x = 0, y = 0;
-                                        for (int k = 0; k < an.ChildNodes.Count; ++k)
-                                        {
-                                            XmlNode qn = an.ChildNodes[k];
-                                            if (qn.Name == "X")
-                                            {
-                                                x = (float)Convert.ToDouble(qn.FirstChild.Value);
-                                            }
-                                            else if (qn.Name == "Y")
-                                            {
-                                                y = (float)Convert.ToDouble(qn.FirstChild.Value);
-                                            }
-                                        }
-                                        hs.Position = new Vector2(x, y);
-                                        break;
-                                    }
-                                case "Layer":
-                                    {
-                                        hs.Layer = Convert.ToInt32(an.FirstChild.Value);
-                                        break;
-                                    }
-                                case "Size":
-                                    {
-                                        float x = 0, y = 0;
-                                        for (int k = 0; k < an.ChildNodes.Count; ++k)
-                                        {
-                                            XmlNode qn = an.ChildNodes[k];
-                                            if (qn.Name == "X")
-                                            {
-                                                x = (float)Convert.ToDouble(qn.FirstChild.Value);
-                                            }
-                                            else if (qn.Name == "Y")
-                                            {
-                                                y = (float)Convert.ToDouble(qn.FirstChild.Value);
-                                            }
-                                        }
-                                        hs.Size = new Vector2(x, y);
-                                        break;
-                                    }
-                                case "Range":
-                                    {
-                                        hs.AMP = (float)Convert.ToDouble(an.FirstChild.Value);
-                                        break;
-                                    }
-                                case "CycleTime":
-                                    {
-                                        hs.TimeOfCycle = (float)Convert.ToDouble(an.FirstChild.Value);
-                                        break;
-                                    }
-                            }
-                        }
-                        AddRenderChunk(hs);
-                    }
-                }
-
-
-                stream.Close();
-                stream.Dispose();
-
-
-
+               
+       }
                 //create task track 
-                UIDialog dialog = UIMgr.AddUIControl("UIDialog", "dlg_questtrck", 755, 174, 247, 345, -1, 99, this) as UIDialog;
+                UIDialog dialog = UIMgr.AddUIControl("UIDialog", "dlg_questtrck", /*755, 174,*/(int)UILayout.Right, (int)UILayout.Center, 247, 345, -1, 99, this) as UIDialog;
                 if (dialog != null)
                 {
                     UITextBlock text = UIMgr.CreateUIControl("UITextBlock") as UITextBlock;
@@ -989,7 +966,11 @@ namespace demo
                     {
                         if (localplayer.OperateTarget != localplayer)
                         {
-                            Spell fireball = Character.CreateCharacter("fireball", this) as Spell;
+#if WINDOWS_PHONE						
+                            Spell fireball = Character.CreateCharacter("fireball", this, "fireball") as Spell;
+#else
+							Spell fireball = Character.CreateCharacter("fireball", this) as Spell;
+#endif														
                             if (fireball != null)
                             {
                                 fireball.Layer = 15;
@@ -1543,6 +1524,7 @@ namespace demo
             return 0;
         }
 
+#if WINDOWS
         private void SaveHoverStones()
         {
             //System.IO.Stream stream = TitleContainer.OpenStream(name + ".xml");
@@ -1753,7 +1735,7 @@ namespace demo
                     break;
             }
         }
-
+#endif
         public void ConfirmOperateTarget()
         {
             if (_hostCharacter != null && _roundtime > 0)

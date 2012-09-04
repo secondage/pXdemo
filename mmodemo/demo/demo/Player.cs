@@ -11,7 +11,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using demo.uicontrols;
+#if WINDOWS
 using System.Windows.Forms;
+#endif
 using ProjectMercury;
 
 namespace demo
@@ -21,8 +23,6 @@ namespace demo
         public Player(string n, Scene s) :
             base(n, s)
         {
-            atk = 134;
-            def = 22;
             TrailParticle = null;
         }
 
@@ -43,7 +43,8 @@ namespace demo
             }
         }
 
-       
+        private Vector2 _scrollviewoffset = new Vector2();
+        public bool CanScrollView { get; set; }
 
         public List<int> CompletedQuests
         {
@@ -53,18 +54,91 @@ namespace demo
             }
         }
 
+        public void ResetSceneScroll()
+        {
+            if (scene.State == demo.Scene.SceneState.Battle)
+                return;
+            Vector4 vp = scene.Viewport;
+            float x = vp.X;
+            float y = vp.Y;
+            if (_GetScrollableH())
+            {
+                x = position.X - vp.Z * 0.5f;
+                x = MathHelper.Clamp(x, 0.0f, scene.ActualSize.Z);
+            }
+            if (_GetScrollableV())
+            {
+                y = position.Y - vp.W * 0.5f;
+                y = MathHelper.Clamp(y, 0.0f, scene.ActualSize.W - GameConst.ScreenHeight);
+            }
+            scene.SetViewportPosDefer(x, y);
+        }
+
+        private bool _GetScrollableH()
+        {
+            if (position.X < GameConst.ScreenWidth * 0.5f)
+                return false;
+            if (position.X > scene.ActualSize.Z - GameConst.ScreenWidth * 0.5f)
+                return false;
+            return true;
+        }
+
+        private bool _GetScrollableV()
+        {
+            if (position.Y < GameConst.ScreenHeight * 0.5f)
+                return false;
+            if (position.Y > scene.ActualSize.W - GameConst.ScreenHeight * 0.5f)
+                return false;
+            return true;
+        }
+
         public void UpdateSceneScroll()
         {
             if (scene.State == demo.Scene.SceneState.Battle)
                 return;
             Vector4 vp = scene.Viewport;
-            float x = position.X - vp.Z * 0.5f;
-            float y = position.Y - vp.W * 0.5f;
 
-            x = MathHelper.Clamp(x, 0.0f, scene.ActualSize.Z);
-            y = MathHelper.Clamp(y, 0.0f, scene.ActualSize.W - GameConst.ScreenHeight);
-
-            scene.SetViewportPos(x, y);
+            if (!CanScrollView)
+            {
+                Vector2 vpc = new Vector2(vp.X + vp.Z * 0.5f, vp.Y + vp.W * 0.5f);
+                if (Vector2.Distance(vpc, position) > GameConst.ViewportScrollRange && (_GetScrollableH() || _GetScrollableV()))
+                {
+                    CanScrollView = true;
+                    if (_GetScrollableH())
+                        _scrollviewoffset.X = position.X - vp.X;
+                    else
+                        _scrollviewoffset.X = -1.0f;
+                    if (_GetScrollableV())
+                        _scrollviewoffset.Y = position.Y - vp.Y;
+                    else
+                        _scrollviewoffset.Y = -1.0f;
+                    
+                }
+            }
+            else
+            {
+                //float x = position.X - vp.Z * 0.5f;
+                //float y = position.Y - vp.W * 0.5f;
+                float x = vp.X;
+                float y = vp.Y;
+                if (_GetScrollableH())
+                {
+                    if (_scrollviewoffset.X > 0.0f)
+                        x = position.X - _scrollviewoffset.X;
+                    else
+                        x = vp.X;
+                    x = MathHelper.Clamp(x, 0.0f, scene.ActualSize.Z);
+                }
+                if (_GetScrollableV())
+                {
+                    if (_scrollviewoffset.Y > 0.0f)
+                        y = position.Y - _scrollviewoffset.Y;
+                    else
+                        y = vp.Y;
+                    y = MathHelper.Clamp(y, 0.0f, scene.ActualSize.W - GameConst.ScreenHeight);
+                }
+                scene.SetViewportPos(x, y);
+            }
         }
 
 
@@ -178,7 +252,7 @@ namespace demo
                 if (interactivetarget != null)
                 {
                     float dist = Vector2.Distance(interactivetarget.Picture.Position, position);
-                    if (dist > 300)
+                    if (dist > GameConst.ViewportScrollRange)
                     {
                         interactivetarget = null;
                         d.State = RenderChunk.RenderChunkState.FadeOutToDel;
@@ -284,16 +358,23 @@ namespace demo
             }
         }
 
-
-        protected void atkbtn_OnClick(object sender, MouseEventArgs e)
+#if WINDOWS_PHONE
+        public void atkbtn_OnClick(object sender, EventArgs e)		
+#else
+		protected void atkbtn_OnClick(object sender, MouseEventArgs e)
+#endif				
         {
             UITextButton btn = sender as UITextButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
             this.op = OperateType.Attack;
 
         }
-
-        protected void magbtn_OnClick(object sender, MouseEventArgs e)
+		
+#if WINDOWS_PHONE
+        public void magbtn_OnClick(object sender, EventArgs e)
+#else
+		protected void magbtn_OnClick(object sender, MouseEventArgs e)
+#endif				
         {
             UITextButton btn = sender as UITextButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
@@ -301,7 +382,11 @@ namespace demo
 
         }
 
-        protected void itembtn_OnClick(object sender, MouseEventArgs e)
+#if WINDOWS_PHONE
+        public void itembtn_OnClick(object sender, EventArgs e)
+#else
+		protected void itembtn_OnClick(object sender, MouseEventArgs e)
+#endif				
         {
             UITextButton btn = sender as UITextButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
@@ -532,13 +617,21 @@ namespace demo
             return uidirty != 0;
         }
 
-        protected void npctalk_OnClose(object sender, EventArgs e)
+#if WINDOWS_PHONE
+        public void npctalk_OnClose(object sender, EventArgs e)
+#else	
+		protected void npctalk_OnClose(object sender, EventArgs e)
+#endif			
         {
             interacting = false;
             interactivetarget = null;
         }
 
-        protected void okbtn_OnClick(object sender, MouseEventArgs e)
+#if WINDOWS_PHONE
+        public void okbtn_OnClick(object sender, EventArgs e)
+#else
+		protected void okbtn_OnClick(object sender, MouseEventArgs e)
+#endif		
         {
             UITextButton btn = sender as UITextButton;
             Quest q = btn.UserData as Quest;
@@ -589,11 +682,14 @@ namespace demo
 
         }
 
-        protected void cancelbtn_OnClick(object sender, MouseEventArgs e)
+#if WINDOWS_PHONE
+        public void cancelbtn_OnClick(object sender, EventArgs e)
+#else
+		protected void cancelbtn_OnClick(object sender, MouseEventArgs e)
+#endif		
         {
             UITextButton btn = sender as UITextButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
-            
         }
 
 

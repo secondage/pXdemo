@@ -22,6 +22,8 @@ using System.Xml;
 using System.Diagnostics;
 using ProjectMercury;
 using ProjectMercury.Renderers;
+using demo.animation;
+using System.Xml.Linq;
 
 namespace demo
 {
@@ -59,6 +61,8 @@ namespace demo
         private ParticleEffect peSpawn;
         private ParticleEffect peClick;
 
+        private Texture2D loadingTexture;
+
         public static bool IsEditorMode { get; set; }
 
         private System.Threading.Tasks.Task contentLoadingTask = null;
@@ -72,6 +76,8 @@ namespace demo
         public MainGame()
         {
             graphics = new GraphicsDeviceManager(this);
+            GameConst.ScreenWidth = 1024;
+            GameConst.ScreenHeight = 768;
             GameConst.Graphics = graphics;
             GameConst.Content = Content;
             GameConst.GameWindow = this.Window;
@@ -297,34 +303,16 @@ namespace demo
             {
                 string ipaddress = "127.0.0.1";
                 int port = 9610;
-                System.IO.Stream stream = TitleContainer.OpenStream("servers.xml");
-                if (stream != null)
+                using(System.IO.Stream stream = TitleContainer.OpenStream("servers.xml"))
                 {
-                    XmlDocument doc = new XmlDocument();
-                    doc.Load(stream);
-                    XmlNodeList constdef = doc.GetElementsByTagName("Server", "");
-                    if (constdef.Count > 0)
+                    XDocument doc = XDocument.Load(stream);
+
+                    XNode x = doc.NextNode;
+                    XElement serverelement = doc.Element("Server");
+                    if (serverelement != null)
                     {
-                        for (int i = 0; i < constdef[0].ChildNodes.Count; ++i)
-                        {
-                            XmlNode node = constdef[0].ChildNodes[i];
-                            if (node != null)
-                            {
-                                switch (node.Name)
-                                {
-                                    case "Ip":
-                                        {
-                                            ipaddress = (node.FirstChild.Value);
-                                            break;
-                                        }
-                                    case "Port":
-                                        {
-                                            port = Convert.ToInt32(node.FirstChild.Value);
-                                            break;
-                                        }
-                                }
-                            }
-                        }
+                        ipaddress = serverelement.Element("Ip").Value;
+                        port = int.Parse(serverelement.Element("Port").Value);
                     }
                 }
                 clientchannel = TcpServer.CreateClient(ipaddress, port);
@@ -602,9 +590,10 @@ namespace demo
             // Allows the game to exit
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
                 this.Exit();
-            //if (!ContentLoadCompleted)
-            //    return;
+            if (!ContentLoadCompleted)
+                return;
             UpdateInput();
+            InterpolatioAnimationMgr.Update(gameTime);
             CurrentScene.Update(gameTime);
             spritebatchrenderer.Transformation = Matrix.CreateTranslation(-CurrentScene.Viewport.X, -CurrentScene.Viewport.Y, 0);
             if (peSpawn != null)
@@ -632,21 +621,29 @@ namespace demo
         /// <param _name="gameTime">Provides a snapshot of timing values.</param>
         /// 
         Matrix idmatrix = new Matrix();
+        float _loadingangle = 0;
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
-            //if (!ContentLoadCompleted)
-            //    return;
+            if (!ContentLoadCompleted)
+            {
+                spriteBatch.Begin();
+                spriteBatch.Draw(loadingTexture, new Vector2(GameConst.ScreenWidth - loadingTexture.Width, GameConst.ScreenHeight - loadingTexture.Height),
+                                  null, Color.White, _loadingangle, new Vector2(loadingTexture.Width / 2, loadingTexture.Height / 2), 1.0f, SpriteEffects.None, 1.0f);
+                spriteBatch.End();
+                _loadingangle += 0.1f;
+                return;
+            }
 
             GameConst.RenderCountPerFrame = 0;
-            CurrentScene.RenderPrepositive();
+            //CurrentScene.RenderPrepositive();
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
             CurrentScene.Render(spriteBatch);
             spriteBatch.End();
-            CurrentScene.RenderPostpositive();
+            //CurrentScene.RenderPostpositive();
 
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullCounterClockwise);
-            UIMgr.Render(spriteBatch);
+            //UIMgr.Render(spriteBatch);
             spriteBatch.End();
 
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied);
@@ -655,7 +652,7 @@ namespace demo
             spriteBatch.End();
 
             //idmatrix
-            Vector3 p = new Vector3();
+            /*Vector3 p = new Vector3();
             if (peTrails != null)
             {
                 spritebatchrenderer.RenderEffect(peTrails, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
@@ -667,7 +664,7 @@ namespace demo
             if (peSpawn != null)
             {
                 spritebatchrenderer.RenderEffect(peSpawn, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
-            }
+            }*/
             base.Draw(gameTime);
         }
 
@@ -700,7 +697,8 @@ namespace demo
                     {
                         clickPos.X = CurrentScene.Viewport.X + cx;
                         clickPos.Y = CurrentScene.Viewport.Y + cy;
-                        peClick.Trigger(ref clickPos);
+                        if (peClick != null)
+                            peClick.Trigger(ref clickPos);
 
                         player.Target = new Vector2(CurrentScene.Viewport.X + cx, CurrentScene.Viewport.Y + cy);
                         if (player.State == CharacterState.Idle)

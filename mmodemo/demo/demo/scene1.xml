@@ -7,6 +7,7 @@
     <PlayerATK>60</PlayerATK>
     <BossRushMode>2</BossRushMode>
     <BossRushMode1Offset>200</BossRushMode1Offset>
+    <ViewportScrollRange>200</ViewportScrollRange>
   </Config>
   <NpcDef>
     <Npc>

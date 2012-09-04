@@ -11,8 +11,9 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+#if WINDOWS
 using System.Windows.Forms;
-
+#endif
 
 namespace demo.uicontrols
 {
@@ -41,9 +42,11 @@ namespace demo.uicontrols
             }
         }
 
-
+#if WINDOWS
         public event MouseEventHandler OnClick;
-     
+#else
+        public event EventHandler OnClick;
+#endif		
         public override void Update(GameTime gametime)
         {
             base.Update(gametime);
@@ -132,11 +135,19 @@ namespace demo.uicontrols
                     }
                 case UIMessage.MouseClick:
                     {
-                        if (controlrect.Contains((int)p1, (int)p2))
+#if WINDOWS_PHONE
+                        if (controlrect.Contains(Convert.ToInt32(p1), Convert.ToInt32(p2)))
+#else					
+						if (controlrect.Contains((int)p1, (int)p2))	
+#endif						
                         {
                             if (OnClick != null)
                             {
-                                OnClick(this, new MouseEventArgs(MouseButtons.Left, 1, (int)p1, (int)p2, 0));
+#if WINDOWS_PHONE							
+                                OnClick(this, new EventArgs());
+#else
+								OnClick(this, new MouseEventArgs(MouseButtons.Left, 1, (int)p1, (int)p2, 0));
+#endif								
                             }
                             result++;
                         }

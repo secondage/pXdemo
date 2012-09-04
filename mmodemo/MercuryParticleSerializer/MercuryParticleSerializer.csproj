@@ -36,7 +36,7 @@
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="ProjectMercury">
-      <HintPath>..\demo\demo\ProjectMercury.dll</HintPath>
+      <HintPath>..\Lib\ProjectMercury.dll</HintPath>
     </Reference>
     <Reference Include="ProjectMercury.ContentPipeline">
       <HintPath>..\Lib\ProjectMercury.ContentPipeline.dll</HintPath>
@@ -56,7 +56,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetDir)*.dll" "$(SolutionDir)demo\demo\bin\x86\Release\"</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetDir)*.dll" "$(SolutionDir)demo\demo\bin\x86\$(ConfigurationName)\"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

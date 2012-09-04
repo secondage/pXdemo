@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
+using demo.animation;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
@@ -25,6 +25,8 @@ namespace demo
         private float originangle = 0.0f;
         private bool hover = false;
         private RenderChunk child;
+        static readonly float _rotatingDur = 0.3f;
+        
       
 
         private Dictionary<string, Texture2D> animTextures = new Dictionary<string, Texture2D>();
@@ -78,6 +80,7 @@ namespace demo
             {
                 dir = value;
                 dir.Normalize();
+                float _endAngle;
                 if (dir.X > 0.0f)
                 {
                     if (dir.Y > 0.0f)
@@ -112,9 +115,11 @@ namespace demo
                 {
                     _endAngle = originangle;
                 }
-                _endAngle = MathHelper.Clamp(_endAngle, -0.52f, 0.52f);
-                _startAngle = angle;
-                _rotatingTime = _rotatingDur;
+                Animation<float>.CreateAnimation2ValueNoRef(angle,
+                                                        _endAngle = MathHelper.Clamp(_endAngle, -0.52f, 0.52f),
+                                                        _rotatingDur,
+                                                        MathHelper.Lerp,
+                                                        this.UpdateRotating);
             }
         }
 
@@ -278,7 +283,7 @@ namespace demo
                 child.Update(gametime);
             }
 
-            UpdateRotating(gametime);
+            //UpdateRotating(gametime);
 
             if (hover)
                 position.Y += (float)Math.Sin(gametime.TotalGameTime.TotalSeconds * _flytime) * 0.3f;
@@ -286,18 +291,12 @@ namespace demo
             base.Update(gametime);
         }
 
-        float _endAngle;
-        float _startAngle;
-        float _rotatingDur = 0.3f;
-        float _rotatingTime = -0.0f;
-        private void UpdateRotating(GameTime gametime)
+       
+        private void UpdateRotating(ref float r)
         {
-            if (_rotatingTime > 0.0f)
+            lock (this)
             {
-                angle = MathHelper.Lerp(_startAngle, _endAngle, (_rotatingDur - _rotatingTime) / _rotatingDur);
-                _rotatingTime -= (float)gametime.ElapsedGameTime.TotalSeconds;
-                if (_rotatingTime < 0.0f)
-                    angle = _endAngle;
+                angle = r;
             }
         }
     }
