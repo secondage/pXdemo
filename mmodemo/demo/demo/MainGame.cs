@@ -54,12 +54,11 @@ namespace demo
         private static TcpChannel clientchannel;
         private LoginDialog dlgLogin;
         private long ClientID;
-        private SpriteBatchRenderer spritebatchrenderer;
         private bool ContentLoadCompleted = false;
 
-        private ParticleEffect peTrails;
-        private ParticleEffect peSpawn;
-        private ParticleEffect peClick;
+        private ParticleEffectWrapper peTrails;
+        private ParticleEffectWrapper peSpawn;
+        private ParticleEffectWrapper peClick;
 
         private Texture2D loadingTexture;
 
@@ -70,8 +69,7 @@ namespace demo
         Texture2D[] cloudTextureArray = new Texture2D[15];
 
         //assembly of Mercury Particle System
-        static Assembly assemblyMercuryParticleSerializer;
-        static Assembly assemblyMercuryContentPipeline;
+       
 
         public MainGame()
         {
@@ -86,8 +84,7 @@ namespace demo
             graphics.DeviceCreated += new EventHandler<EventArgs>(Graphics_DeviceCreated);
             Content.RootDirectory = "Content";
 
-            assemblyMercuryParticleSerializer = Assembly.LoadFrom(Path.Combine(Application.StartupPath, "MercuryParticleSerializer.dll"));
-            assemblyMercuryContentPipeline = Assembly.LoadFrom(Path.Combine(Application.StartupPath, "ProjectMercury.ContentPipeline.dll"));
+           
             
            
             Beetle.TcpUtils.Setup(100, 1, 1);
@@ -338,13 +335,7 @@ namespace demo
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            //spritebatchrenderer = new SpriteBatchRenderer();
-            spritebatchrenderer = new SpriteBatchRenderer
-            {
-                GraphicsDeviceService = this.graphics,
-                Transformation = Matrix.CreateTranslation(0, 0, 1f)
-            };
+            ParticleEffectWrapper.Initialise(this.graphics);
 
             loadingTexture = Content.Load<Texture2D>("ui/loading");
 
@@ -393,61 +384,19 @@ namespace demo
                         CurrentScene.LoadGameData();
                         CurrentScene.LoadBackground();
 
-                        spritebatchrenderer.GraphicsDeviceService = this.graphics;
-                        spritebatchrenderer.LoadContent(null);
+                        peTrails = new ParticleEffectWrapper();
+                        peTrails.Load("magictrail");
+                        peTrails.Layer = 100;
+                        CurrentScene.AddRenderChunk(peTrails);
+                        peSpawn = new ParticleEffectWrapper();
+                        peSpawn.Load("BeamMeUp");
+                        peSpawn.Layer = 100;
+                        CurrentScene.AddRenderChunk(peSpawn);
+                        peClick = new ParticleEffectWrapper();
+                        peClick.Load("clickeffect");
+                        peClick.Layer = 100;
+                        CurrentScene.AddRenderChunk(peClick);
 
-#if PARTICLE_NOCONTENT
-                        if (assemblyMercuryParticleSerializer != null)
-                        {
-                            Type type = assemblyMercuryParticleSerializer.GetType("MercuryParticleSerializer.DefaultSerializer");
-                            MethodInfo dsGetMethod = type.GetMethod("Deserialize");
-                            object obj = assemblyMercuryParticleSerializer.CreateInstance(type.FullName, true);
-
-                            if (dsGetMethod != null)
-                            {
-                                peTrails = dsGetMethod.Invoke(obj, new string[] { @"particles/magictrail.xml" }) as ParticleEffect;
-                                for (int i = 0; i < peTrails.Emitters.Count; i++)
-                                {
-                                    peTrails.Emitters[i].ParticleTexture = GameConst.Content.Load<Texture2D>(@"particles/" + peTrails.Emitters[i].ParticleTextureAssetPath);
-                                    peTrails.Emitters[i].Initialise();
-                                }
-
-                                peSpawn = dsGetMethod.Invoke(obj, new string[] { @"particles/BeamMeUp.xml" }) as ParticleEffect;
-                                for (int i = 0; i < peSpawn.Emitters.Count; i++)
-                                {
-                                    peSpawn.Emitters[i].ParticleTexture = GameConst.Content.Load<Texture2D>(@"particles/" + peSpawn.Emitters[i].ParticleTextureAssetPath);
-                                    peSpawn.Emitters[i].Initialise();
-                                }
-
-                                peClick = dsGetMethod.Invoke(obj, new string[] { @"particles/BasicExplosion.xml" }) as ParticleEffect;
-                                for (int i = 0; i < peClick.Emitters.Count; i++)
-                                {
-                                    peClick.Emitters[i].ParticleTexture = GameConst.Content.Load<Texture2D>(@"particles/" + peClick.Emitters[i].ParticleTextureAssetPath);
-                                    peClick.Emitters[i].Initialise();
-                                }
-
-                            }
-                        }
-#else
-                        peTrails = Content.Load<ParticleEffect>(@"particles/magictrail");
-                        for (int i = 0; i < peTrails.Emitters.Count; i++)
-                        {
-                            peTrails.Emitters[i].ParticleTexture = GameConst.Content.Load<Texture2D>(@"particles/" + peTrails.Emitters[i].ParticleTextureAssetPath);
-                            peTrails.Emitters[i].Initialise();
-                        }
-                        peSpawn = Content.Load<ParticleEffect>(@"particles/BeamMeUp");
-                        for (int i = 0; i < peSpawn.Emitters.Count; i++)
-                        {
-                            peSpawn.Emitters[i].ParticleTexture = GameConst.Content.Load<Texture2D>(@"particles/" + peSpawn.Emitters[i].ParticleTextureAssetPath);
-                            peSpawn.Emitters[i].Initialise();
-                        }
-                        peClick = Content.Load<ParticleEffect>(@"particles/BasicExplosion");
-                        for (int i = 0; i < peClick.Emitters.Count; i++)
-                        {
-                            peClick.Emitters[i].ParticleTexture = GameConst.Content.Load<Texture2D>(@"particles/" + peClick.Emitters[i].ParticleTextureAssetPath);
-                            peClick.Emitters[i].Initialise();
-                        }
-#endif
 
                         Thread.Sleep(10);
                         ContentLoadCompleted = true;
@@ -618,19 +567,7 @@ namespace demo
             UpdateInput();
             InterpolatioAnimationMgr.Update(gameTime);
             CurrentScene.Update(gameTime);
-            spritebatchrenderer.Transformation = Matrix.CreateTranslation(-CurrentScene.Viewport.X, -CurrentScene.Viewport.Y, 0);
-            if (peSpawn != null)
-            {
-                peSpawn.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
-            }
-            if (peTrails != null)
-            {
-                peTrails.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
-            }
-            if (peClick != null)
-            {
-                peClick.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
-            }
+            ParticleEffectWrapper.SetTransformation(Matrix.CreateTranslation(-CurrentScene.Viewport.X, -CurrentScene.Viewport.Y, 0));
             UIMgr.Update(gameTime);
             //player.Update(gameTime);
 
@@ -674,21 +611,6 @@ namespace demo
             if (player != null)
                 spriteBatch.DrawString(mainfont, string.Format("{0:d}, {1:d} {2:d}", (int)player.Position.X, (int)player.Position.Y, GameConst.RenderCountPerFrame), Vector2.Zero, Color.Red);
             spriteBatch.End();
-
-            //idmatrix
-            Vector3 p = new Vector3();
-            if (peTrails != null)
-            {
-                spritebatchrenderer.RenderEffect(peTrails, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
-            }
-            if (peClick != null)
-            {
-                spritebatchrenderer.RenderEffect(peClick, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
-            }
-            if (peSpawn != null)
-            {
-                spritebatchrenderer.RenderEffect(peSpawn, ref idmatrix, ref idmatrix, ref idmatrix, ref p);
-            }
             base.Draw(gameTime);
         }
 

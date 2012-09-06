@@ -26,7 +26,7 @@ namespace demo
             TrailParticle = null;
         }
 
-        public ParticleEffect TrailParticle { get; set; }
+        public ParticleEffectWrapper TrailParticle { get; set; }
     
         Dictionary<int, Quest> quests = new Dictionary<int, Quest>();
         Dictionary<int, Quest> quests_completed = new Dictionary<int, Quest>();

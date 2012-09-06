@@ -354,8 +354,11 @@ namespace demo
             }
             return null;
         }
-
+#if WINDOWS_PHONE
+        public void UpdatePlayerPosition(ProjectXServer.Messages.PlayerPositionUpdate msg)
+#else
         public void UpdatePlayerPosition(PlayerPositionUpdate msg)
+#endif
         {
             Player _p = null;
 
@@ -1930,8 +1933,11 @@ namespace demo
             }
         }
 
-
-        internal void UpdatePlayerMovement(PlayerMoveRequest msg)
+#if WINDOWS_PHONE
+        internal void UpdatePlayerMovement(ProjectXServer.Messages.PlayerMoveRequest msg)
+#else
+		internal void UpdatePlayerMovement(PlayerMoveRequest msg)
+#endif
         {
             Player _p = FindNetPlayer(msg.ClientID);
             if (_p != null)
@@ -1944,7 +1950,11 @@ namespace demo
             }
         }
 
-        internal void UpdatePlayerTarget(PlayerTargetChanged msg)
+#if WINDOWS_PHONE
+        internal void UpdatePlayerTarget(ProjectXServer.Messages.PlayerTargetChanged msg)
+#else
+        internal void UpdatePlayerTarget(PlayerTargetChanged msg)	
+#endif	
         {
             Player _p = FindNetPlayer(msg.ClientID);
             if (_p != null)

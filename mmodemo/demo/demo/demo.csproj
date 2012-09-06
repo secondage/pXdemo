@@ -161,6 +161,7 @@
     <Compile Include="Scene.cs" />
     <Compile Include="Spell.cs" />
     <Compile Include="Timer.cs" />
+    <Compile Include="uicontrols\UIButton.cs" />
     <Compile Include="uicontrols\UITextButton.cs" />
     <Compile Include="uicontrols\UIDialog.cs" />
     <Compile Include="uicontrols\UIElement.cs" />
@@ -169,6 +170,7 @@
     <Compile Include="UIMgr.cs" />
     <Compile Include="NetPlayer.cs" />
     <Compile Include="HoverStone.cs" />
+    <Compile Include="ParticleEffectWrapper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="cursors\attack.cur">
@@ -190,6 +192,9 @@
     <Content Include="Game.ico" />
     <Content Include="GameThumbnail.png">
       <XnaPlatformSpecific>true</XnaPlatformSpecific>
+    </Content>
+    <Content Include="particles\clickeffect.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="particles\magictrail.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
