@@ -758,7 +758,7 @@ namespace demo
                             }
                         case CharacterActionSetChangeFactor.ArriveTarget:
                             {
-                                //Target = currentactionset.target;
+                                Target = currentactionset.target;
                                 OnArrived += new EventHandler(OnUpdateActionSets);
                                 break;
                             }

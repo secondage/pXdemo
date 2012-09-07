@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<XnaContent>
+  <Asset Type="UIControlTemplate.UIControlTemplate">
+    <type>UIButton</type>
+    <texture>controls</texture>
+    <rects>
+      <Item>
+        <name>Normal</name>
+        <x>36</x>
+        <y>0</y>
+        <w>62</w>
+        <h>31</h>
+      </Item>
+      <Item>
+        <name>MouseIn</name>
+        <x>100</x>
+        <y>0</y>
+        <w>62</w>
+        <h>31</h>
+      </Item>
+      <Item>
+        <name>Down</name>
+        <x>164</x>
+        <y>0</y>
+        <w>62</w>
+        <h>31</h>
+      </Item>
+    </rects>
+    <childs></childs>
+  </Asset>
+</XnaContent>

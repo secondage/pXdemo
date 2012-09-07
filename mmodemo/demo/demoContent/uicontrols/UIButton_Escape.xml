@@ -5,20 +5,13 @@
     <texture>controls</texture>
     <rects>
       <Item>
-        <name>Normal</name>
-        <x>0</x>
-        <y>0</y>
-        <w>16</w>
-        <h>16</h>
+        <name>Disable</name>
+        <x>100</x>
+        <y>64</y>
+        <w>62</w>
+        <h>31</h>
       </Item>
-      <Item>
-        <name>MouseIn</name>
-        <x>18</x>
-        <y>0</y>
-        <w>16</w>
-        <h>16</h>
-      </Item>
-    </rects>
+     </rects>
     <childs></childs>
   </Asset>
 </XnaContent>

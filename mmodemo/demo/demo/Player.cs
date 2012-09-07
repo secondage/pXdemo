@@ -326,38 +326,36 @@ namespace demo
             }
             if (dialog != null)
             {
-                UITextButton btn = dialog.GetUIControlByName("atkbtn") as UITextButton;
+                UIButton btn = dialog.GetUIControlByName("atkbtn") as UIButton;
                 if (btn == null)
                 {
-                    btn = UIMgr.CreateUIControl("UITextButton") as UITextButton;
+                    btn = UIMgr.CreateUIControl("UIButton_Attack") as UIButton;
                 }
                 if (btn != null)
                 {
-                    btn.Text = "攻击";
-                    btn.FontColor = Color.DeepSkyBlue;
-                    dialog.AddUIControl(btn, "atkbtn", 2, 2, 66, 20, -1, this);
+                    dialog.AddUIControl(btn, "atkbtn", 2, 2, 0, 0, -1, this);
                 }
-                btn = dialog.GetUIControlByName("magbtn") as UITextButton;
+                btn = dialog.GetUIControlByName("magbtn") as UIButton;
                 if (btn == null)
                 {
-                    btn = UIMgr.CreateUIControl("UITextButton") as UITextButton;
+                    btn = UIMgr.CreateUIControl("UIButton_Magic") as UIButton;
                 }
                 if (btn != null)
                 {
-                    btn.Text = "法术";
                     btn.FontColor = Color.DeepSkyBlue;
-                    dialog.AddUIControl(btn, "magbtn", 2, 23, 66, 20, -1, this);
+                    btn.UIState = (CompletedQuests.Contains(1) ? UIElementState.Normal : UIElementState.Disable);
+                    dialog.AddUIControl(btn, "magbtn", 2, 34, 0, 0, -1, this);
                 }
-                btn = dialog.GetUIControlByName("itembtn") as UITextButton;
+                btn = dialog.GetUIControlByName("itembtn") as UIButton;
                 if (btn == null)
                 {
-                    btn = UIMgr.CreateUIControl("UITextButton") as UITextButton;
+                    btn = UIMgr.CreateUIControl("UIButton_Escape") as UIButton;
                 }
                 if (btn != null)
                 {
-                    btn.Text = "道具";
                     btn.FontColor = Color.DeepSkyBlue;
-                    dialog.AddUIControl(btn, "itembtn", 2, 44, 66, 20, -1, this);
+                    btn.UIState = UIElementState.Disable;
+                    dialog.AddUIControl(btn, "itembtn", 2, 68, 0, 0, -1, this);
                 }
             }
         }
@@ -368,7 +366,7 @@ namespace demo
 		protected void atkbtn_OnClick(object sender, MouseEventArgs e)
 #endif				
         {
-            UITextButton btn = sender as UITextButton;
+            UIButton btn = sender as UIButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
             this.op = OperateType.Attack;
 
@@ -380,7 +378,7 @@ namespace demo
 		protected void magbtn_OnClick(object sender, MouseEventArgs e)
 #endif				
         {
-            UITextButton btn = sender as UITextButton;
+            UIButton btn = sender as UIButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
             this.op = OperateType.Magic;
 
@@ -392,7 +390,7 @@ namespace demo
 		protected void itembtn_OnClick(object sender, MouseEventArgs e)
 #endif				
         {
-            UITextButton btn = sender as UITextButton;
+            UIButton btn = sender as UIButton;
             btn.Parent.State = RenderChunk.RenderChunkState.FadeOutToDel;
 
         }

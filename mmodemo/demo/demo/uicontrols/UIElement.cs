@@ -20,7 +20,7 @@ namespace demo.uicontrols
         private double lifetime = -1.0;
         private List<UIElement> childs = new List<UIElement>();
         private UIElement parent;
-        protected UIElementState uistate = UIElementState.Normal;
+        private UIElementState uistate = UIElementState.Normal;
         protected Rectangle[] staterects = new Rectangle[(int)UIElementState.Lastword];
         protected string name;
         protected object receiver;
@@ -53,7 +53,7 @@ namespace demo.uicontrols
             {
                 return srcrect;
             }
-            set
+            private set
             {
                 srcrect = value;
                 sizedirty = true;
@@ -211,6 +211,7 @@ namespace demo.uicontrols
             set
             {
                 uistate = value;
+                SourceRect = staterects[(int)uistate];
             }
         }
 

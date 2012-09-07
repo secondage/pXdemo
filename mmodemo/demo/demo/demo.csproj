@@ -167,7 +167,7 @@
     <Compile Include="uicontrols\UIElement.cs" />
     <Compile Include="uicontrols\UIImage.cs" />
     <Compile Include="uicontrols\UITextBlock.cs" />
-    <Compile Include="UIMgr.cs" />
+    <Compile Include="uicontrols\UIMgr.cs" />
     <Compile Include="NetPlayer.cs" />
     <Compile Include="HoverStone.cs" />
     <Compile Include="ParticleEffectWrapper.cs" />

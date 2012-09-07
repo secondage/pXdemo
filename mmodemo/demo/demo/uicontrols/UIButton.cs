@@ -56,6 +56,8 @@ namespace demo.uicontrols
         {
             if (state != RenderChunkState.Show)
                 return 0;
+            if (UIState == UIElementState.Disable)
+                return 0;
             int result = 0;
             switch (msg)
             {
@@ -63,23 +65,23 @@ namespace demo.uicontrols
                     {
                         if (controlrect.Contains((int)p1, (int)p2))
                         {
-                            if (uistate == UIElementState.Normal)
+                            if (UIState == UIElementState.Normal)
                             {
-                                SourceRect = staterects[(int)UIElementState.MouseIn];
-                                uistate = UIElementState.MouseIn;
+                                //SourceRect = staterects[(int)UIElementState.MouseIn];
+                                UIState = UIElementState.MouseIn;
                             }
                         }
                         else
                         {
-                            if (uistate == UIElementState.MouseIn)
+                            if (UIState == UIElementState.MouseIn)
                             {
-                                SourceRect = staterects[(int)UIElementState.Normal];
-                                uistate = UIElementState.Normal;
+                                //SourceRect = staterects[(int)UIElementState.Normal];
+                                UIState = UIElementState.Normal;
                             }
-                            else if (uistate == UIElementState.Down)
+                            else if (UIState == UIElementState.Down)
                             {
-                                SourceRect = staterects[(int)UIElementState.Normal];
-                                uistate = UIElementState.Normal;
+                                //SourceRect = staterects[(int)UIElementState.Normal];
+                                UIState = UIElementState.Normal;
                                 Position -= new Vector2(2, 2);
                             }
                         }
@@ -89,9 +91,9 @@ namespace demo.uicontrols
                     {
                         if (controlrect.Contains((int)p1, (int)p2))
                         {
-                            if (uistate != UIElementState.Down)
+                            if (UIState != UIElementState.Down)
                             {
-                                uistate = UIElementState.Down;
+                                UIState = UIElementState.Down;
                                 Position += new Vector2(2, 2);
                                 result++;
                             }
@@ -102,9 +104,9 @@ namespace demo.uicontrols
                     {
                         if (controlrect.Contains((int)p1, (int)p2))
                         {
-                            if (uistate == UIElementState.Down)
+                            if (UIState == UIElementState.Down)
                             {
-                                uistate = UIElementState.MouseIn;
+                                UIState = UIElementState.MouseIn;
                                 Position -= new Vector2(2, 2);
                             }
                         }
